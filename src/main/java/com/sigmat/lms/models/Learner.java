@@ -18,5 +18,7 @@ public class Learner {
     private String email;
     private int phoneNo;
     private Date joinDate;
-    
+
+    public Learner() {
+    }
 }
