@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/public")
 public class AuthController {
 
     @Autowired
@@ -33,10 +33,10 @@ public class AuthController {
         userService.saveUser (newUser );
         return ResponseEntity.ok().body("User  registered successfully!");
     }
-    
-    @GetMapping("/users")
-    public ResponseEntity<List<Users>> getUsers() {
-        List<Users> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+    @GetMapping("/test")
+    public ResponseEntity<?> test() {
+        return ResponseEntity.ok().body("Test successful");
     }
+    
+    
 }
