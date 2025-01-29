@@ -1,33 +1,48 @@
 package com.sigmat.lms.models;
 
-import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-@Entity
+@RequiredArgsConstructor
 @Getter
-@Setter
-public class Role {
+public enum Role {
+    USER(Set.of()), 
+    ADMIN(Set.of(
+            Permission.ADMIN_READ,
+            Permission.ADMIN_CREATE,
+            Permission.ADMIN_UPDATE,
+            Permission.ADMIN_DELETE,
+            Permission.MANAGER_READ,
+            Permission.MANAGER_CREATE,
+            Permission.MANAGER_UPDATE,
+            Permission.MANAGER_DELETE
+    )),
+    MANAGER(Set.of(
+            Permission.MANAGER_READ,
+            Permission.MANAGER_CREATE,
+            Permission.MANAGER_UPDATE,
+            Permission.MANAGER_DELETE
+    ));
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private final Set<Permission> permissions;
 
-    @Column(nullable = false, unique = true)
-    private String name;
-
-    @ManyToMany(mappedBy = "roles")
-    private Set<Users> users = new HashSet<>();
-
-    // Default constructor
-    public Role() {
+    public Collection<GrantedAuthority> getAuthorities() {
+        return permissions.stream()
+                .map(permission -> new SimpleGrantedAuthority(permission.getAuthority()))
+                .collect(Collectors.toList());
     }
 
-    // Constructor with parameters
-    public Role(String name) {
-        this.name = name;
+    public String getRoleName() {
+        return "ROLE_" + this.name();
+    }
+
+    public boolean hasPermission(Permission permission) {
+        return permissions.contains(permission);
     }
 }
