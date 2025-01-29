@@ -5,24 +5,37 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class UserPrincipal implements UserDetails {
+
     private final Users user;
+
     public UserPrincipal(Users user) {
         this.user = user;
     }
 
-
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("USER"));
+        Set<Role> roles = user.getRoles(); 
+        if (roles == null || roles.isEmpty()) {
+            return List.of(); 
+        }
+
+        return roles.stream()
+                .flatMap(role -> {
+                    Collection<GrantedAuthority> roleAuthorities = role.getAuthorities();
+                    roleAuthorities.add(new SimpleGrantedAuthority(role.getRoleName())); 
+                    return roleAuthorities.stream();
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return user.getPassword(); 
     }
 
     @Override
@@ -32,21 +45,27 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
+        return true; 
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return UserDetails.super.isAccountNonLocked();
+        return true; 
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
+        return true; 
     }
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return true; 
     }
+
+    public Users getUser() {
+        return user;
+    }
+
+    public Long getId() { return user.getId();} 
 }
