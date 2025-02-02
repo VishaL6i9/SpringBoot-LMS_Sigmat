@@ -1,14 +1,15 @@
 package com.sigmat.lms.models;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import java.time.LocalDate;
-import java.util.List;
+import lombok.*;
 
-@Setter
-@Getter
+import java.time.LocalDate;
+
+@Data
+@Builder
+@AllArgsConstructor
 @Entity
+@NoArgsConstructor
 public class Instructor {
 
     @Id
