@@ -125,55 +125,6 @@ public class CertificateController {
         certificateService.deleteCertificate(id);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/download/{id}")
-    public ResponseEntity<byte[]> downloadCertificate(@PathVariable Long id, Model model) throws IOException, DocumentException {
-
-        // 1. Retrieve Certificate Data (replace with your actual data retrieval)
-        CertificateDTO certificateDTO = certificateRepo.findCertificateDtoById(id).orElseThrow(() -> new EntityNotFoundException("Certificate not found")); // Handle not found
-        // 2. Prepare Data for Thymeleaf Template
-        model.addAttribute("learnerFirstName", certificateDTO.getLearnerFirstName());
-        model.addAttribute("courseName", certificateDTO.getCourseName());
-        model.addAttribute("instructorFirstName", certificateDTO.getInstructorFirstName());
-        model.addAttribute("dateOfCertificate", certificateDTO.getDateOfCertificate());
-        // ... other data for the certificate ...
-
-        // 3. Generate HTML from Thymeleaf Template
-        String html = generateHtmlFromTemplate("certificateTemplate", model); // See helper function below
-
-        // 4. Convert HTML to PDF using Flying Saucer
-        byte[] pdfBytes = generatePdfFromHtml(html);
-
-        // 5. Return PDF as response
-        String filename = String.format("certificate_%d_%s.pdf", id, certificateDTO.getLearnerFirstName().replace(" ", "_"));
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDispositionUtils.attachment()
-                        .filename(filename, StandardCharsets.UTF_8)
-                        .build().toString())
-                .body(pdfBytes);
-    }
-
-    // Helper function to generate HTML from Thymeleaf template
-    private String generateHtmlFromTemplate(String templateName, Model model) {
-        // Use Thymeleaf to process the template and return the HTML string.
-        // This requires a configured Spring TemplateEngine bean.
-        // Example:
-        // Context context = new Context();
-        // context.setVariables(model.asMap()); // Add model attributes to the context.
-        // return templateEngine.process(templateName, context);
-        return ""; // Placeholder
-    }
-
-    // Helper function to generate PDF from HTML
-    private byte[] generatePdfFromHtml(String html) throws IOException, DocumentException {
-        ITextRenderer renderer = new ITextRenderer();
-        renderer.setDocumentFromString(html);
-        renderer.layout();
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            renderer.createPDF(outputStream);
-            return outputStream.toByteArray();
-        }
-    }
+    
 
 }
