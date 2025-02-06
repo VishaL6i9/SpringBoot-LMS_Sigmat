@@ -18,7 +18,7 @@ public class Certificate {
     @JoinColumn(name = "learner_id",referencedColumnName = "learner_id")
     private Learner learner;
     @ManyToOne
-    @JoinColumn(name = "course_id",referencedColumnName = "course_id")
+    @JoinColumn(name = "courseId",referencedColumnName = "courseId")
     private Course course;
     @ManyToOne
     @JoinColumn(name =  "instructor_id", referencedColumnName = "instructor_id")

@@ -16,7 +16,7 @@ public class Attendance {
     private Long attendanceID;
 
     @ManyToOne
-    @JoinColumn(name = "course_id", referencedColumnName = "course_id")
+    @JoinColumn(name = "courseId", referencedColumnName = "courseId")
     private Course course;
 
     @ManyToOne
@@ -26,7 +26,7 @@ public class Attendance {
     @Column(columnDefinition = "DATE")
     private Date attendanceDate;
 
-    private String status; // present/absent
+    private String status; 
 
    
 }

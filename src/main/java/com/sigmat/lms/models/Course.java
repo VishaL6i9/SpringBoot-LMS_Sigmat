@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class Course {
     @Id
-    @Column(name = "course_id",unique = true,nullable = false)
+    @Column(name = "courseId", unique = true,nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long courseId;
     private String courseName;
