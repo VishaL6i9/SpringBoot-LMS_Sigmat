@@ -5,9 +5,7 @@ import com.sigmat.lms.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 @RestController
@@ -21,5 +19,14 @@ public class AdminController {
     public ResponseEntity<List<Users>> getUsers() {
         List<Users> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
+    }
+    @DeleteMapping("/delete/user/{username}")
+    public ResponseEntity<?> deleteUser(@PathVariable String username) {
+        try {
+            userService.deleteUserByUsername(username);
+            return ResponseEntity.ok().body("User deleted successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body("User not found or deletion failed: " + e.getMessage());
+        }
     }
 }
