@@ -21,7 +21,7 @@ public class AuthController {
 
         if (userService.validateUser (username, password)) {
             String token = userService.generateToken(username);
-            return ResponseEntity.ok().body("Login successful! Token: " + token);
+            return ResponseEntity.ok().body(token);
         } else {
             return ResponseEntity.status(401).body("Login failed! Invalid credentials.");
         }
@@ -33,7 +33,7 @@ public class AuthController {
         userToSave.setId(newUser.getId());
         userToSave.setUsername(newUser .getUsername());
         userToSave.setPassword(newUser .getPassword());
-        userToSave.getRoles().add(Role.LEARNER); 
+        userToSave.getRoles().add(Role.LEARNER);
 
         try {
             userService.saveUser (userToSave);
@@ -42,10 +42,12 @@ public class AuthController {
             return ResponseEntity.status(400).body("Registration failed: " + e.getMessage());
         }
     }
-    
+
 
     @GetMapping("/test")
     public ResponseEntity<?> test() {
         return ResponseEntity.ok().body("Test successful");
     }
+    
+    
 }
