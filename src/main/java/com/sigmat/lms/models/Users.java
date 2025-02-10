@@ -1,11 +1,7 @@
 package com.sigmat.lms.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,20 +10,34 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "users")
 public class Users {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) 
-    @Column(unique = true, nullable = false)
-    private Long id; 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(nullable = false, unique = true) 
+    @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false) 
+    @Column(nullable = false)
     private String password;
 
-    @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER) 
+    @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     private Set<Role> roles = new HashSet<>();
+
+    @OneToOne(mappedBy = "users", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    private UserProfile userProfile;
+
+
+
+    @PrePersist
+    public void prePersist() {
+        if (userProfile == null) {
+            userProfile = new UserProfile();
+            userProfile.setUsers(this);
+        }
+    }
 }
+
