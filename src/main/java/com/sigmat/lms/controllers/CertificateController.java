@@ -89,9 +89,7 @@ public class CertificateController {
             return ResponseEntity.notFound().build(); 
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build(); 
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build(); // Generic error handling
-        }
+        } 
     }
     
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
