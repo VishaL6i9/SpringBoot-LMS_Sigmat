@@ -1,22 +1,25 @@
 package com.sigmat.lms.services;
 
-import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.models.Users;
+import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.repo.UserRepo;
 import com.sigmat.lms.repo.UserProfileRepo;
+import com.sigmat.lms.services.JwtService;
+import com.sigmat.lms.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
+import jakarta.transaction.Transactional;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-class UserServiceTest {
+public class UserServiceTest {
 
     @Mock
     private UserRepo userRepository;
@@ -25,85 +28,110 @@ class UserServiceTest {
     private UserProfileRepo userProfileRepository;
 
     @Mock
-    private JwtService jwtService;
+    private JwtService jwtUtil;
 
     @InjectMocks
     private UserService userService;
 
-    private Users user;
-    private UserProfile userProfile;
+    private BCryptPasswordEncoder passwordEncoder;
 
     @BeforeEach
-    void setUp() {
-        user = new Users();
-        user.setId(1L);
-        user.setUsername("testuser");
-        user.setPassword("password");
-
-        userProfile = new UserProfile();
-        userProfile.setUsers(user);
-        userProfile.setEmail("testuser@example.com");
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+        passwordEncoder = new BCryptPasswordEncoder();
     }
 
     @Test
-    void testSaveUser_CreatesUserProfile() {
-        when(userRepository.save(any(Users.class))).thenReturn(user);
-        when(userProfileRepository.findByUsers(user)).thenReturn(null);
-        when(userProfileRepository.save(any(UserProfile.class))).thenReturn(userProfile);
+    public void testValidateUser_Success() {
+        Users user = new Users();
+        user.setUsername("testUser ");
+        user.setPassword(passwordEncoder.encode("testPassword"));
 
-        userService.saveUser(user);
+        when(userRepository.findByUsername("testUser ")).thenReturn(user);
 
-        verify(userRepository, times(1)).save(user);
-        verify(userProfileRepository, times(1)).save(any(UserProfile.class));
-    }
+        boolean isValid = userService.validateUser ("testUser ", "testPassword");
 
-    @Test
-    void testValidateUser_Success() {
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        user.setPassword(passwordEncoder.encode("password"));
-
-        when(userRepository.findByUsername("testuser")).thenReturn(user);
-
-        boolean isValid = userService.validateUser("testuser", "password");
         assertTrue(isValid);
     }
 
     @Test
-    void testValidateUser_Failure() {
-        when(userRepository.findByUsername("testuser")).thenReturn(null);
-        boolean isValid = userService.validateUser("testuser", "password");
+    public void testValidateUser_Failure() {
+        when(userRepository.findByUsername("testUser ")).thenReturn(null);
+
+        boolean isValid = userService.validateUser ("testUser ", "testPassword");
+
         assertFalse(isValid);
     }
 
     @Test
-    void testGenerateToken() {
-        when(jwtService.generateToken("testuser")).thenReturn("mockedToken");
+    public void testGenerateToken() {
+        when(jwtUtil.generateToken("testUser ")).thenReturn("mockToken");
 
-        String token = userService.generateToken("testuser");
+        String token = userService.generateToken("testUser ");
 
-        assertNotNull(token);
-        assertEquals("mockedToken", token);
+        assertEquals("mockToken", token);
     }
 
     @Test
-    void testDeleteUserByUsername() {
-        when(userRepository.findByUsername("testuser")).thenReturn(user);
+    @Transactional
+    public void testSaveUser () {
+        Users user = new Users();
+        user.setUsername("testUser ");
+        user.setPassword("testPassword");
+        user.setFirstName("Test");
+        user.setLastName("User ");
+
+        UserProfile userProfile = new UserProfile();
+        userProfile.setUsers(user);
+
+        when(userRepository.save(any(Users.class))).thenReturn(user);
         when(userProfileRepository.findByUsers(user)).thenReturn(userProfile);
 
-        userService.deleteUserByUsername("testuser");
+        userService.saveUser (user);
 
-        verify(userProfileRepository, times(1)).delete(userProfile);
-        verify(userRepository, times(1)).delete(user);
+        verify(userRepository).save(user);
+        verify(userProfileRepository).save(userProfile);
     }
 
     @Test
-    void testDeleteUserByUsername_UserNotFound() {
-        when(userRepository.findByUsername("testuser")).thenReturn(null);
+    public void testGetAllUsers() {
+        Users user = new Users();
+        user.setUsername("testUser ");
+
+        when(userRepository.findAll()).thenReturn(Collections.singletonList(user));
+
+        List<Users> users = userService.getAllUsers();
+
+        assertEquals(1, users.size());
+        assertEquals("testUser ", users.get(0).getUsername());
+    }
+
+    @Test
+    @Transactional
+    public void testDeleteUserByUsername_Success() {
+        Users user = new Users();
+        user.setUsername("testUser ");
+
+        UserProfile userProfile = new UserProfile();
+        userProfile.setUsers(user);
+
+        when(userRepository.findByUsername("testUser ")).thenReturn(user);
+        when(userProfileRepository.findByUsers(user)).thenReturn(userProfile);
+
+        userService.deleteUserByUsername("testUser ");
+
+        verify(userProfileRepository).delete(userProfile);
+        verify(userRepository).delete(user);
+    }
+
+    @Test
+    public void testDeleteUserByUsername_UserNotFound() {
+        when(userRepository.findByUsername("nonExistentUser ")).thenReturn(null);
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
-            userService.deleteUserByUsername("testuser");
+            userService.deleteUserByUsername("nonExistentUser ");
         });
 
-        assertEquals("User not found: testuser", exception.getMessage());
+        assertEquals("User  not found: nonExistentUser ", exception.getMessage());
     }
 }
