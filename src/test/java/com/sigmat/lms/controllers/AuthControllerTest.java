@@ -1,6 +1,7 @@
 package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.models.Role;
+import com.sigmat.lms.models.UserDTO;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,7 +11,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
+import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -29,32 +30,52 @@ public class AuthControllerTest {
     }
 
     @Test
+
     public void testLogin_Success() {
-        Users user = new Users();
-        user.setUsername("testUser ");
-        user.setPassword("testPassword");
+
+        UserDTO userDTO = new UserDTO();
+
+        userDTO.setUsername("testUser ");
+
+        userDTO.setPassword("testPassword");
+
 
         when(userService.validateUser ("testUser ", "testPassword")).thenReturn(true);
+
         when(userService.generateToken("testUser ")).thenReturn("mockToken");
 
-        ResponseEntity<?> response = authController.login(user);
+
+        ResponseEntity<?> response = authController.login(userDTO);
+
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Login successful! Token: mockToken", response.getBody());
+
+        assertEquals(Map.of("token", "mockToken", "message", "Login successful!"), response.getBody());
+
     }
 
+
     @Test
+
     public void testLogin_Failure() {
-        Users user = new Users();
-        user.setUsername("testUser ");
-        user.setPassword("wrongPassword");
+
+        UserDTO userDTO = new UserDTO();
+
+        userDTO.setUsername("testUser ");
+
+        userDTO.setPassword("wrongPassword");
+
 
         when(userService.validateUser ("testUser ", "wrongPassword")).thenReturn(false);
 
-        ResponseEntity<?> response = authController.login(user);
+
+        ResponseEntity<?> response = authController.login(userDTO);
+
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertEquals("Login failed! Invalid credentials.", response.getBody());
+
+        assertEquals(Map.of("message", "Login failed! Invalid credentials."), response.getBody());
+
     }
 
     @Test
