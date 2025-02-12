@@ -39,10 +39,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(Customizer.withDefaults()) // Enable CORS with default configuration (for development)
-                // OR, for more customized CORS (recommended for production):
-                // .cors(withHttpOnly()) // Enable CORS with default configuration
-                // .cors(Customizer.withDefaults())
+                .cors(Customizer.withDefaults()) 
                 .csrf(Customizer -> Customizer.disable()) 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/public/**","/error").permitAll() 
