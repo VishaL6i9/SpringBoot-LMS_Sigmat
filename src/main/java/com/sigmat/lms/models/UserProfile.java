@@ -18,7 +18,7 @@ public class UserProfile {
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private Users users;
-
+    
     private String firstName;
     private String lastName;
     private String email;
