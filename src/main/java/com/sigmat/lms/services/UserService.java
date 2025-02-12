@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -26,7 +27,7 @@ public class UserService {
         this.jwtUtil = jwtUtil;
     }
 
-    public boolean validateUser(String username, String password) {
+    public boolean validateUser (String username, String password) {
         Users user = userRepository.findByUsername(username);
         return user != null && passwordEncoder.matches(password, user.getPassword());
     }
@@ -36,40 +37,39 @@ public class UserService {
     }
 
     @Transactional
-    public void saveUser(Users user) {
+    public void saveUser (Users user) {
+        // Hash the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         try {
-            Users savedUser = userRepository.save(user);
-            UserProfile userProfile = userProfileRepository.findByUsers(savedUser);
-
-            if (userProfile == null) {
-                userProfile = new UserProfile();
-                userProfile.setUsers(savedUser);
-                userProfile.setEmail(savedUser.getUsername() + "@gmail.com"); 
-                userProfile.setPassword(savedUser.getPassword()); 
-            } else {
-                
-                if (userProfile.getEmail() == null || userProfile.getEmail().isEmpty()) {
-                    userProfile.setEmail(savedUser.getUsername() + "@gmail.com");
-                }
-                
-                if (userProfile.getPassword() == null ||
-                        !userProfile.getPassword().equals(savedUser.getPassword())) {
-                    userProfile.setPassword(savedUser.getPassword()); 
-                }
-            }
             
-            LOGGER.info("Final Email set before save: " + userProfile.getEmail());
-            LOGGER.info("Final Password set before save: " + (userProfile.getPassword() != null ? "ENCRYPTED" : "NULL"));
+            LOGGER.info("Saving user: " + user.getUsername() + ", First Name: " + user.getFirstName() + ", Last Name: " + user.getLastName());
 
+            Users savedUser  = userRepository.save(user);
+
+            UserProfile userProfile = userProfileRepository.findByUsers(savedUser );
+
+            userProfile.setEmail(savedUser .getEmail());
+            userProfile.setFirstName(savedUser .getFirstName());
+            userProfile.setLastName(savedUser .getLastName());
+            userProfile.setLanguage("en");
+            userProfile.setTimezone("UTC");
+            userProfile.setPassword(user.getPassword());
+            
             userProfileRepository.save(userProfile);
-            LOGGER.info("User and profile saved successfully: " + user.getUsername());
+            
+            LOGGER.info("User  registered successfully: " + savedUser .getUsername());
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new RuntimeException("User was updated by another transaction. Please try again.");
+            
+            LOGGER.warning("User  was updated by another transaction: " + e.getMessage());
+            throw new RuntimeException("Registration failed due to a conflict. Please try again.");
+        } catch (Exception e) {
+            
+            LOGGER.severe("Error saving user: " + e.getMessage());
+            throw new RuntimeException("Registration failed. Please try again.");
         }
     }
-    
+
     public List<Users> getAllUsers() {
         return userRepository.findAll();
     }
@@ -78,15 +78,15 @@ public class UserService {
     public void deleteUserByUsername(String username) {
         Users user = userRepository.findByUsername(username);
         if (user == null) {
-            throw new RuntimeException("User not found: " + username);
+            throw new RuntimeException("User  not found: " + username);
         }
-        
+
         UserProfile userProfile = userProfileRepository.findByUsers(user);
         if (userProfile != null) {
             userProfileRepository.delete(userProfile);
         }
 
         userRepository.delete(user);
-        LOGGER.info("User deleted: " + username);
+        LOGGER.info("User  deleted: " + username);
     }
 }
