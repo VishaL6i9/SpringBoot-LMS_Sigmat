@@ -24,20 +24,14 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody UserDTO loginUser ) {
 
         String username = loginUser .getUsername();
-
         String password = loginUser .getPassword();
-
-
+        
         if (userService.validateUser (username, password)) {
-
             String token = userService.generateToken(username);
-
             return ResponseEntity.ok().body(token);
-
-        } else {
-
+        } 
+        else {
             return ResponseEntity.status(401).body(Map.of("message", "Login failed! Invalid credentials."));
-
         }
 
     }
@@ -53,7 +47,6 @@ public class AuthController {
         userToSave.setFirstName(newUser .getFirstName());
         userToSave.setLastName(newUser .getLastName());
     
-        // Clear existing roles and add new roles from the input
         userToSave.getRoles().clear();
         if (newUser .getRoles() != null && !newUser .getRoles().isEmpty()) {
             userToSave.getRoles().addAll(newUser .getRoles());
@@ -75,5 +68,6 @@ public class AuthController {
     public ResponseEntity<?> test() {
         return ResponseEntity.ok().body("Test successful");
     }
+    
     
 }
