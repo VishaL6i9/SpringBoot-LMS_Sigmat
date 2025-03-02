@@ -6,10 +6,8 @@ import com.sigmat.lms.repo.UserRepo;
 import com.sigmat.lms.services.JwtService;
 import com.sigmat.lms.services.UserProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.oauth2.server.servlet.OAuth2AuthorizationServerProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,13 +16,13 @@ import org.springframework.web.bind.annotation.*;
 public class UserProfileController {
 
     private final JwtService jwtService;
+    private final UserProfileService userProfileService;
+    private final UserRepo userRepo;
+
     @Autowired
-    private UserProfileService userProfileService;
-    @Autowired
-    private UserRepo userRepo;
-    @Autowired
-    public UserProfileController(JwtService jwtService, UserRepo userRepo) {
+    public UserProfileController(JwtService jwtService, UserProfileService userProfileService, UserRepo userRepo) {
         this.jwtService = jwtService;
+        this.userProfileService = userProfileService;
         this.userRepo = userRepo;
     }
 
@@ -39,13 +37,19 @@ public class UserProfileController {
         UserProfile updatedProfile = userProfileService.updateUserProfile(userProfile);
         return ResponseEntity.ok(updatedProfile);
     }
-    
+
+    @PutMapping("/user/profile/password")
+    public ResponseEntity<Void> updateUserPassword(@RequestParam Long userID, @RequestParam String newPassword) {
+        userProfileService.updateUserPassword(userID, newPassword);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/user/profile/getuserID")
     public ResponseEntity<Long> getUserID(@RequestHeader("Authorization") String token) {
         if (token.startsWith("Bearer ")) {
-            token = token.substring(7).trim(); 
+            token = token.substring(7).trim();
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); 
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         String username = jwtService.extractUserName(token);
         if (username == null || username.isEmpty()) {
