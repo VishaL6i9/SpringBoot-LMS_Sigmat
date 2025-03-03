@@ -39,14 +39,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(Customizer.withDefaults()) 
-                .csrf(Customizer -> Customizer.disable()) 
+                .cors(Customizer.withDefaults())
+                .csrf(Customizer -> Customizer.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/public/**","/error").permitAll() 
-                        .anyRequest().authenticated() 
+                        .requestMatchers("/api/public/**", "/error", "/logout").permitAll() 
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Use stateless sessions for JWT
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class); 
 
         return http.build();
     }
@@ -62,6 +62,7 @@ public class SecurityConfig {
         authenticationManagerBuilder.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
         return authenticationManagerBuilder.build();
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
