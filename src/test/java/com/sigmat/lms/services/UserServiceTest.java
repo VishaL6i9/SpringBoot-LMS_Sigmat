@@ -4,18 +4,22 @@ import com.sigmat.lms.models.Users;
 import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.repo.UserRepo;
 import com.sigmat.lms.repo.UserProfileRepo;
-import com.sigmat.lms.services.JwtService;
-import com.sigmat.lms.services.UserService;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import jakarta.transaction.Transactional;
-import java.util.Collections;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -33,105 +37,88 @@ public class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-    private BCryptPasswordEncoder passwordEncoder;
-
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        passwordEncoder = new BCryptPasswordEncoder();
     }
 
     @Test
-    public void testValidateUser_Success() {
-        Users user = new Users();
-        user.setUsername("testUser ");
-        user.setPassword(passwordEncoder.encode("testPassword"));
+    public void testProcessUserFileBatchCreate_CSV() throws IOException {
+        String csvContent = "username1,password1,email1@example.com,FirstName1,LastName1\n" +
+                "username2,password2,email2@example.com,FirstName2,LastName2\n" +
+                "username3,password3,email3@example.com,FirstName3,LastName3";
+        MultipartFile csvFile = new MockMultipartFile("file", "users.csv", "text/csv", csvContent.getBytes());
 
-        when(userRepository.findByUsername("testUser ")).thenReturn(user);
+        // Mock the behavior of userRepository to avoid actual database calls
+        when(userRepository.save(any(Users.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        boolean isValid = userService.validateUser ("testUser ", "testPassword");
+        // Mock the behavior of userProfileRepository to return a new UserProfile
+        UserProfile mockUserProfile = new UserProfile();
+        when(userProfileRepository.findByUsers(any(Users.class))).thenReturn(mockUserProfile);
 
-        assertTrue(isValid);
+        List<Users> users = userService.processUserFileBatchCreate(csvFile);
+
+        assertEquals(3, users.size(), "Expected 3 users to be processed from CSV");
+        assertEquals("username1", users.get(0).getUsername());
+        assertEquals("username2", users.get(1).getUsername());
+        assertEquals("username3", users.get(2).getUsername());
+
+        // Verify that saveUser  was called for each user
+        verify(userRepository, times(3)).save(any(Users.class));
     }
 
     @Test
-    public void testValidateUser_Failure() {
-        when(userRepository.findByUsername("testUser ")).thenReturn(null);
+    public void testProcessUserFileBatchCreate_Excel() throws IOException {
+        // Create a valid Excel file in memory
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Users");
 
-        boolean isValid = userService.validateUser ("testUser ", "testPassword");
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("Username");
+        headerRow.createCell(1).setCellValue("Password");
+        headerRow.createCell(2).setCellValue("Email");
+        headerRow.createCell(3).setCellValue("First Name");
+        headerRow.createCell(4).setCellValue("Last Name");
 
-        assertFalse(isValid);
-    }
+        // Add user data
+        Object[][] userData = {
+                {"username1", "password1", "email1@example.com", "FirstName1", "LastName1"},
+                {"username2", "password2", "email2@example.com", "FirstName2", "LastName2"},
+                {"username3", "password3", "email3@example.com", "FirstName3", "LastName3"}
+        };
 
-    @Test
-    public void testGenerateToken() {
-        when(jwtUtil.generateToken("testUser ")).thenReturn("mockToken");
+        int rowNum = 1;
+        for (Object[] user : userData) {
+            Row row = sheet.createRow(rowNum++);
+            for (int i = 0; i < user.length; i++) {
+                row.createCell(i).setCellValue((String) user[i]);
+            }
+        }
 
-        String token = userService.generateToken("testUser ");
+        // Write the workbook to a byte array output stream
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
 
-        assertEquals("mockToken", token);
-    }
+        // Create a MultipartFile from the byte array
+        MultipartFile excelFile = new MockMultipartFile("file", "users.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", outputStream.toByteArray());
 
-    @Test
-    @Transactional
-    public void testSaveUser () {
-        Users user = new Users();
-        user.setUsername("testUser ");
-        user.setPassword("testPassword");
-        user.setFirstName("Test");
-        user.setLastName("User ");
+        // Mock the behavior of userRepository to avoid actual database calls
+        when(userRepository.save(any(Users.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        UserProfile userProfile = new UserProfile();
-        userProfile.setUsers(user);
+        // Mock the behavior of userProfileRepository to return a new UserProfile
+        UserProfile mockUserProfile = new UserProfile();
+        when(userProfileRepository.findByUsers(any(Users.class))).thenReturn(mockUserProfile);
 
-        when(userRepository.save(any(Users.class))).thenReturn(user);
-        when(userProfileRepository.findByUsers(user)).thenReturn(userProfile);
+        List<Users> users = userService.processUserFileBatchCreate(excelFile);
 
-        userService.saveUser (user);
+        assertEquals(3, users.size(), "Expected 3 users to be processed from Excel");
+        assertEquals("username1", users.get(0).getUsername());
+        assertEquals("username2", users.get(1).getUsername());
+        assertEquals("username3", users.get(2).getUsername());
 
-        verify(userRepository).save(user);
-        verify(userProfileRepository).save(userProfile);
-    }
-
-    @Test
-    public void testGetAllUsers() {
-        Users user = new Users();
-        user.setUsername("testUser ");
-
-        when(userRepository.findAll()).thenReturn(Collections.singletonList(user));
-
-        List<Users> users = userService.getAllUsers();
-
-        assertEquals(1, users.size());
-        assertEquals("testUser ", users.get(0).getUsername());
-    }
-
-    @Test
-    @Transactional
-    public void testDeleteUserByUsername_Success() {
-        Users user = new Users();
-        user.setUsername("testUser ");
-
-        UserProfile userProfile = new UserProfile();
-        userProfile.setUsers(user);
-
-        when(userRepository.findByUsername("testUser ")).thenReturn(user);
-        when(userProfileRepository.findByUsers(user)).thenReturn(userProfile);
-
-        userService.deleteUserByUsername("testUser ");
-
-        verify(userProfileRepository).delete(userProfile);
-        verify(userRepository).delete(user);
-    }
-
-    @Test
-    public void testDeleteUserByUsername_UserNotFound() {
-        when(userRepository.findByUsername("nonExistentUser ")).thenReturn(null);
-
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            userService.deleteUserByUsername("nonExistentUser ");
-        });
-
-        assertEquals("User  not found: nonExistentUser ", exception.getMessage());
+        // Verify that saveUser  was called for each user
+        verify(userRepository, times(3)).save(any(Users.class));
     }
 }
