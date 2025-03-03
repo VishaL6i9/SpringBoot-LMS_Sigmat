@@ -31,5 +31,4 @@ public class CourseService {
         return courseRepo.findByCourseId(courseId);
     }
 
-    // Add other methods as needed (e.g., findByCourseName, etc.)
 }

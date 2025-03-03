@@ -31,5 +31,4 @@ public class InstructorService {
         return instructorRepo.findByInstructorId(instructorId);
     }
 
-    // Add other methods as needed
 }

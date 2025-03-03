@@ -2,7 +2,6 @@ package com.sigmat.lms.repo;
 
 import com.sigmat.lms.models.Learner;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.Optional;
 
 public interface LearnerRepo extends JpaRepository<Learner, Long> {

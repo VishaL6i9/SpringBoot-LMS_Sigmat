@@ -28,6 +28,5 @@ public class LearnerService {
     public Optional<Learner> getLearnerById(Long learnerId) {
         return learnerRepo.findByLearnerId(learnerId);
     }
-
-    // Add other methods as needed
+    
 }
