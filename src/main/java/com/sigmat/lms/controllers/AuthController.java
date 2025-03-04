@@ -66,7 +66,7 @@ public class AuthController {
 
         try {
             List<Users> users = userService.processUserFileBatchCreate(file);
-            return ResponseEntity.ok().body(users.size() + " users registered successfully!");
+            return ResponseEntity.ok().body(users.size());
         } catch (Exception e) {
             LOGGER.severe("Batch registration failed: " + e.getMessage());
             return ResponseEntity.status(400).body("Batch registration failed: " + e.getMessage());
