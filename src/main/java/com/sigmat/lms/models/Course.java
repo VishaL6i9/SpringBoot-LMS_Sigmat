@@ -2,7 +2,6 @@ package com.sigmat.lms.models;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDate;
 
 @Setter
 @Data
@@ -16,11 +15,14 @@ public class Course {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long courseId;
     private String courseName;
+    private String courseCode;
     private String courseDescription;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private int totalModules;
-
+    private Long courseDuration;
+    private String courseMode;
+    private int maxEnrollments;
+    private Long courseFee;
+    private String language;
+    private String courseCategory;
     @ManyToOne
     @JoinColumn(name = "instructor_id", referencedColumnName = "instructor_id")
     private Instructor instructor;
