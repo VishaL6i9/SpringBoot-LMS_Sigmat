@@ -27,6 +27,17 @@ public class CourseController {
         return new ResponseEntity<>(savedCourse, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{courseId}")
+    public ResponseEntity<Course> updateCourse(@PathVariable Long courseId, @RequestBody Course courseDetails) {
+        Course updatedCourse = courseService.updateCourse(courseId, courseDetails);
+
+        if (updatedCourse != null) {
+            return new ResponseEntity<>(updatedCourse, HttpStatus.OK);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<Course>> getAllCourses() {
         List<Course> courses = courseService.getAllCourses();
@@ -40,6 +51,13 @@ public class CourseController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
+    @GetMapping("/{courseCode}/id")
+    public ResponseEntity<Long> getCourseIdByName(@PathVariable String courseCode) {
+        Optional<Long> courseId = courseService.getCourseIdByCode(courseCode);
+        return courseId.map(id -> ResponseEntity.ok(id))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+    
     @DeleteMapping("/{courseId}")
     public ResponseEntity<Void> deleteCourse(@PathVariable Long courseId) {
         courseService.deleteCourse(courseId);
