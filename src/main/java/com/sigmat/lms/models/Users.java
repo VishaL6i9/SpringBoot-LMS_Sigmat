@@ -1,6 +1,7 @@
 package com.sigmat.lms.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.HashSet;
@@ -18,14 +19,16 @@ public class Users {
 
     @Column(unique = true)
     private String username;
-    
+
     @Column(nullable = false)
     private String password;
-    
+
     @Column(unique = true)
     private String email;
+
     @Column
     private String firstName;
+
     @Column
     private String lastName;
 
@@ -37,7 +40,14 @@ public class Users {
     @JsonIgnore
     @OneToOne(mappedBy = "users", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
     private UserProfile userProfile;
-    
+
+    @JsonProperty(required = false)
+    @Column(name = "verification_token")
+    private String verificationToken; 
+
+    @Column(name = "is_verified", nullable = false)
+    private boolean isVerified = false;
+
     @PrePersist
     public void prePersist() {
         if (userProfile == null) {
@@ -46,4 +56,3 @@ public class Users {
         }
     }
 }
-
