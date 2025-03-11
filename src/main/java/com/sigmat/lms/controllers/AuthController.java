@@ -71,7 +71,7 @@ public class AuthController {
         }
 
     }
-    
+
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader("Authorization") String token) {
         boolean isInvalidated = userService.invalidateToken(token);
@@ -86,5 +86,11 @@ public class AuthController {
     @GetMapping("/test")
     public ResponseEntity<?> test() {
         return ResponseEntity.ok().body("Test successful");
+    }
+
+    @GetMapping("/verify-email")
+    public String verifyEmail(@RequestParam String token) {
+        boolean isVerified = userService.verifyUser(token);
+        return isVerified ? "Email verified successfully!" : "Invalid or expired token.";
     }
 }
