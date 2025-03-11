@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 @Service
@@ -32,18 +33,20 @@ public class UserService {
     private final UserRepo userRepository;
     private final UserProfileRepo userProfileRepository;
     private final JwtService jwtUtil;
+    private final EmailService emailService; 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
 
     private final Set<String> invalidatedTokens = new HashSet<>();
 
-    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil) {
+    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.jwtUtil = jwtUtil;
+        this.emailService = emailService; 
     }
 
-    public boolean validateUser (String username, String password) {
+    public boolean validateUser(String username, String password) {
         Users user = userRepository.findByUsername(username);
         return user != null && passwordEncoder.matches(password, user.getPassword());
     }
@@ -53,27 +56,37 @@ public class UserService {
     }
 
     @Transactional
-    public void saveUser (Users user) {
+    public void saveUser(Users user) {
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        user.setVerified(false);
+        
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         try {
             LOGGER.info("Saving user: " + user.getUsername() + ", First Name: " + user.getFirstName() + ", Last Name: " + user.getLastName());
 
-            Users savedUser  = userRepository.save(user);
+            Users savedUser = userRepository.save(user);
 
-            UserProfile userProfile = userProfileRepository.findByUsers(savedUser );
-            userProfile.setEmail(savedUser .getEmail());
-            userProfile.setFirstName(savedUser .getFirstName());
-            userProfile.setLastName(savedUser .getLastName());
+            UserProfile userProfile = userProfileRepository.findByUsers(savedUser);
+            if (userProfile == null) {
+                userProfile = new UserProfile();
+                userProfile.setUsers(savedUser);
+            }
+            userProfile.setEmail(savedUser.getEmail());
+            userProfile.setFirstName(savedUser.getFirstName());
+            userProfile.setLastName(savedUser.getLastName());
             userProfile.setLanguage("en");
             userProfile.setTimezone("UTC");
-            userProfile.setPassword(user.getPassword());
+            userProfile.setPassword(savedUser.getPassword());
 
             userProfileRepository.save(userProfile);
 
-            LOGGER.info("User  registered successfully: " + savedUser .getUsername());
+            emailService.sendVerificationEmail(savedUser.getEmail(), verificationToken);
+
+            LOGGER.info("User registered successfully: " + savedUser.getUsername());
         } catch (ObjectOptimisticLockingFailureException e) {
-            LOGGER.warning("User  was updated by another transaction: " + e.getMessage());
+            LOGGER.warning("User was updated by another transaction: " + e.getMessage());
             throw new RuntimeException("Registration failed due to a conflict. Please try again.");
         } catch (Exception e) {
             LOGGER.severe("Error saving user: " + e.getMessage());
@@ -89,7 +102,7 @@ public class UserService {
     public void deleteUserByUsername(String username) {
         Users user = userRepository.findByUsername(username);
         if (user == null) {
-            throw new RuntimeException("User  not found: " + username);
+            throw new RuntimeException("User not found: " + username);
         }
 
         UserProfile userProfile = userProfileRepository.findByUsers(user);
@@ -98,7 +111,7 @@ public class UserService {
         }
 
         userRepository.delete(user);
-        LOGGER.info("User  deleted: " + username);
+        LOGGER.info("User deleted: " + username);
     }
 
     public boolean invalidateToken(String token) {
@@ -124,10 +137,15 @@ public class UserService {
                         user.setFirstName(values[3]);
                         user.setLastName(values[4]);
                         user.getRoles().add(Role.LEARNER);
+
+                        String verificationToken = UUID.randomUUID().toString();
+                        user.setVerificationToken(verificationToken);
+                        user.setVerified(false);
+
                         users.add(user);
                     }
                 }
-            } else if (file.getOriginalFilename(). endsWith(".xlsx") || file.getOriginalFilename().endsWith(".xls")) {
+            } else if (file.getOriginalFilename().endsWith(".xlsx") || file.getOriginalFilename().endsWith(".xls")) {
                 try (InputStream inputStream = file.getInputStream()) {
                     Workbook workbook = WorkbookFactory.create(inputStream);
                     Sheet sheet = workbook.getSheetAt(0);
@@ -140,6 +158,11 @@ public class UserService {
                         user.setFirstName(row.getCell(3).getStringCellValue());
                         user.setLastName(row.getCell(4).getStringCellValue());
                         user.getRoles().add(Role.LEARNER);
+
+                        String verificationToken = UUID.randomUUID().toString();
+                        user.setVerificationToken(verificationToken);
+                        user.setVerified(false);
+
                         users.add(user);
                     }
                 }
@@ -148,7 +171,7 @@ public class UserService {
             }
 
             for (Users user : users) {
-                saveUser (user);
+                saveUser(user);
             }
         } catch (Exception e) {
             LOGGER.severe("Error processing user file: " + e.getMessage());
@@ -162,7 +185,7 @@ public class UserService {
         try (CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
             String[] nextLine;
             while ((nextLine = csvReader.readNext()) != null) {
-                usernames.add(nextLine[0]); 
+                usernames.add(nextLine[0]);
             }
         } catch (CsvValidationException e) {
             throw new RuntimeException(e);
@@ -174,7 +197,7 @@ public class UserService {
         List<String> usernames = new ArrayList<>();
         try (InputStream inputStream = file.getInputStream()) {
             Workbook workbook = WorkbookFactory.create(inputStream);
-            Sheet sheet = workbook.getSheetAt(0); 
+            Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
                 if (row.getCell(0) != null) {
                     usernames.add(row.getCell(0).getStringCellValue());
@@ -182,5 +205,19 @@ public class UserService {
             }
         }
         return usernames;
+    }
+
+    @Transactional
+    public boolean verifyUser(String verificationToken) {
+        Users user = userRepository.findByVerificationToken(verificationToken);
+        if (user == null) {
+            return false;
+        }
+
+        user.setVerified(true);
+        user.setVerificationToken(null);
+        userRepository.save(user);
+
+        return true;
     }
 }
