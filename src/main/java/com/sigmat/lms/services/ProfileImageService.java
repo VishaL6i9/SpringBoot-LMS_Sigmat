@@ -1,11 +1,13 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.ProfileImage;
+import com.sigmat.lms.models.Users;
 import com.sigmat.lms.repo.ProfileImageRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.util.List;
 
 @Service
 public class ProfileImageService {
@@ -21,5 +23,9 @@ public class ProfileImageService {
 
     public ProfileImage getImage(Long id) {
         return imageRepository.findById(id).orElse(null);
+    }
+
+    public List<ProfileImage> getAllImages() {
+        return imageRepository.findAll();
     }
 }
