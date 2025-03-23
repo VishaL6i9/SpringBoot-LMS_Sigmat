@@ -18,7 +18,7 @@ public class UserProfile {
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private Users users;
-    
+
     private String firstName;
     private String lastName;
     private String email;
@@ -26,8 +26,9 @@ public class UserProfile {
     private String timezone;
     private String language;
 
-    @Lob
-    private byte[] profileImage;
+    @OneToOne(cascade = CascadeType.ALL) 
+    @JoinColumn(name = "profile_image_id")
+    private ProfileImage profileImage; 
 
     private String password;
 }
