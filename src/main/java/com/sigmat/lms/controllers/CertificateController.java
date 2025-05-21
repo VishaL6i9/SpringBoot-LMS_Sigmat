@@ -1,4 +1,4 @@
-package com.sigmat.lms.controllers; // Your package name
+package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.models.*;
 import com.sigmat.lms.repo.CertificateRepo;
