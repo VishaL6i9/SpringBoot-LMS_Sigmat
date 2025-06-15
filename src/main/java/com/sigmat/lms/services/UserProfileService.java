@@ -4,7 +4,7 @@ import com.sigmat.lms.exceptions.UserProfileNotFoundException;
 import com.sigmat.lms.models.ProfileImage;
 import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.models.Users;
-import com.sigmat.lms.repo.ProfileImageRepo; 
+import com.sigmat.lms.repo.ProfileImageRepo;
 import com.sigmat.lms.repo.UserProfileRepo;
 import com.sigmat.lms.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.util.Optional;
 
@@ -35,7 +36,7 @@ public class UserProfileService {
 
     public UserProfile updateUserProfile(UserProfile userProfile) {
         UserProfile existingProfile = userProfileRepository.findByUsersId(userProfile.getId());
-        Optional<Users> existingUser  = userRepo.findById(userProfile.getId());
+        Optional<Users> existingUser  = Optional.ofNullable(userRepo.findById(userProfile.getId()));
 
         if (existingProfile != null && existingUser .isPresent()) {
             Users updatedUser  = existingUser .get();
@@ -62,7 +63,7 @@ public class UserProfileService {
     }
 
     public void updateUserPassword(Long userId, String newPassword) {
-        Optional<Users> existingUser  = userRepo.findById(userId);
+        Optional<Users> existingUser  = Optional.ofNullable(userRepo.findById(userId));
         UserProfile existingProfile = userProfileRepository.findByUsersId(userId);
 
         if (existingUser .isPresent()) {
