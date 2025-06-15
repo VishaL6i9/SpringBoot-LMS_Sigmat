@@ -3,10 +3,10 @@ package com.sigmat.lms.services;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import com.sigmat.lms.models.Role;
-import com.sigmat.lms.models.Users;
 import com.sigmat.lms.models.UserProfile;
-import com.sigmat.lms.repo.UserRepo;
+import com.sigmat.lms.models.Users;
 import com.sigmat.lms.repo.UserProfileRepo;
+import com.sigmat.lms.repo.UserRepo;
 import jakarta.transaction.Transactional;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -20,11 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 
 @Service
@@ -219,5 +215,9 @@ public class UserService {
         userRepository.save(user);
 
         return true;
+    }
+
+    public Users getUserById(Long userId) {
+        return userRepository.findById(userId);
     }
 }
