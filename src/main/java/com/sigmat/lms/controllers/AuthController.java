@@ -20,6 +20,17 @@ public class AuthController {
     private UserService userService;
     private static final Logger LOGGER = Logger.getLogger(AuthController.class.getName());
 
+    @GetMapping("/users")
+    public ResponseEntity<List<Users>> getAllUsers() {
+        try {
+            List<Users> users = userService.getAllUsers();
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            LOGGER.severe("Failed to fetch users: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserDTO loginUser ) {
         String username = loginUser .getUsername();
