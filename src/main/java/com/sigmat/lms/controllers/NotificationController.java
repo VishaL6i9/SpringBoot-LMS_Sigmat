@@ -23,6 +23,14 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.createNotification(notification, userId));
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<List<NotificationDTO>> sendNotificationToUsers(
+            @RequestBody NotificationDTO notification,
+            @RequestParam List<Long> userIds
+    ) {
+        return ResponseEntity.ok(notificationService.sendNotificationToUsers(notification, userIds));
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<NotificationDTO>> getUserNotifications(@PathVariable Long userId) {
         return ResponseEntity.ok(notificationService.getUserNotifications(userId));

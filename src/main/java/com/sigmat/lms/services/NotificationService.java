@@ -40,6 +40,12 @@ public class NotificationService {
         return convertToDTO(notificationRepository.save(notification));
     }
 
+    public List<NotificationDTO> sendNotificationToUsers(NotificationDTO dto, List<Long> userIds) {
+        return userIds.stream()
+                .map(userId -> createNotification(dto, userId))
+                .collect(Collectors.toList());
+    }
+
     public List<NotificationDTO> getUserNotifications(Long userId) {
         return notificationRepository.findByUserIdOrderByTimestampDesc(userId)
                 .stream()
