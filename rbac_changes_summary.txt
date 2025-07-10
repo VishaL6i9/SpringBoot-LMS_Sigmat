@@ -1,132 +1,70 @@
-# Technical Implementation Details: Role-Based Access Control & Instructor-Student Relationships
+Summary of Role-Based Access Control (RBAC) Changes:
 
-## Core Architectural Changes
+1.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/models/Permission.java
+    -   Removed `MANAGER_READ`, `MANAGER_CREATE`, `MANAGER_UPDATE`, `MANAGER_DELETE` permissions.
+    -   Added `INSTRUCTOR_READ`, `INSTRUCTOR_CREATE`, `INSTRUCTOR_UPDATE`, `INSTRUCTOR_DELETE` permissions.
 
-1. **Security Layer Enhancement**
-   - Implemented hierarchical access control:
-     - ADMIN → Full access (all profiles)
-     - INSTRUCTOR → Own profile + assigned students
-     - USER → Only own profile
-   - Replaced blanket `@PreAuthorize` with granular service-level checks
-   - Added `Authentication` parameter propagation to service layer
+2.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/models/Role.java
+    -   Removed `LEARNER` and `MANAGER` roles.
+    -   Renamed `LEARNER` to `USER`.
+    -   Added `INSTRUCTOR` role.
+    -   Updated permissions for `ADMIN` to include all `ADMIN_*` and `INSTRUCTOR_*` permissions.
+    -   Assigned `INSTRUCTOR_*` permissions to the `INSTRUCTOR` role.
+    -   `USER` role has no specific permissions.
 
-2. **Relationship Management System**
-   - Created `InstructorStudentRelationship` JPA entity:
-     ```java
-     @Entity
-     @Table(name = "instructor_student")
-     public class InstructorStudentRelationship {
-         @Id @GeneratedValue(strategy = IDENTITY)
-         private Long id;
-         private Long instructorId;  // FK to Users
-         private Long studentId;    // FK to Users
-         private boolean active = true;
-     }
-     ```
-   - Implemented soft-delete capability via `active` flag
+3.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/UserProfileController.java
+    -   Changed `@RequestMapping` from `/api/public` to `/api/user`.
+    -   Updated class-level `@PreAuthorize` from `hasAnyRole('ADMIN', 'LEARNER', 'MANAGER')` to `hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')`.
+    -   Corrected method-level `@RequestMapping` paths by removing redundant `/user` segment (e.g., `/user/profile/{userID}` became `/profile/{userID}`).
+    -   Method-level `@PreAuthorize` for self-access or ADMIN override on `getUserProfile`, `updateUserProfile`, `updateUserPassword`, `getProfileImageID`, `uploadProfileImage`, and `getProfilePic` remain unchanged in logic.
 
-## Service Layer Modifications
+4.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/CourseController.java
+    -   Changed `@RequestMapping` from `/api/public/courses` to `/api/courses`.
+    -   Updated method-level `@PreAuthorize` for `createCourse` and `updateCourse` from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+    -   Method-level `@PreAuthorize` for `deleteCourse` (ADMIN) remains unchanged.
+    -   Updated method-level `@PreAuthorize` for `getAllCourses`, `getCourseById`, `getCourseIdByName` from `hasAnyRole('ADMIN', 'MANAGER', 'LEARNER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')`.
 
-### UserProfileService Changes
-- Added access-controlled variants of existing methods:
-  ```java
-  // Before
-  public UserProfile getUserProfile(Long userId)
-  
-  // After
-  public UserProfile getUserProfile(Long userId, Authentication auth) {
-      UserPrincipal principal = (UserPrincipal) auth.getPrincipal();
-      
-      if (isAdmin(principal) {
-          return getUserProfile(userId); // Original implementation
-      }
-      if (isInstructor(principal) {
-          if (userId.equals(principal.getId()) || 
-              relationshipService.isStudentOfInstructor(userId, principal.getId())) {
-              return getUserProfile(userId);
-          }
-      }
-      // ... user validation ...
-  }
-  ```
+5.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/NotificationController.java
+    -   Changed `@RequestMapping` from `/api/public/notifications` to `/api/notifications`.
+    -   Updated method-level `@PreAuthorize` for `createNotification` and `sendNotificationToUsers` from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+    -   Method-level `@PreAuthorize` for `getUserNotifications`, `getUnreadNotifications`, `markAllAsRead`, `getNotificationStats` (self-access or ADMIN) remain unchanged.
+    -   Updated method-level `@PreAuthorize` for `markAsRead` to use `@notificationService.getNotificationById(#id).user.id == authentication.principal.id or hasRole('ADMIN')` (logic unchanged, but included for completeness).
 
-### New UserRelationshipService
-```java
-public interface UserRelationshipService {
-    // Relationship management
-    InstructorStudentRelationship createRelationship(Long instructorId, Long studentId);
-    void deactivateRelationship(Long instructorId, Long studentId);
-    
-    // Access control
-    boolean isStudentOfInstructor(Long studentId, Long instructorId);
-    List<Long> getStudentsForInstructor(Long instructorId);
-}
-```
+6.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/VideoController.java
+    -   Method-level `@PreAuthorize` for `uploadVideo` and `updateVideo` updated from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+    -   Method-level `@PreAuthorize` for `deleteVideo` (ADMIN) remains unchanged.
+    -   Method-level `@PreAuthorize` for `getAllVideos`, `getVideoById`, `searchByTitle`, `streamVideo` updated from `hasAnyRole('ADMIN', 'MANAGER', 'LEARNER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')`.
 
-## Database Schema Updates
+7.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/CertificateController.java
+    -   Changed `@RequestMapping` from `/api/public/certificates` to `/api/certificates`.
+    -   Updated method-level `@PreAuthorize` for `createCertificate` and `updateCertificate` from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+    -   Method-level `@PreAuthorize` for `deleteCertificate` (ADMIN) remains unchanged.
+    -   Updated method-level `@PreAuthorize` for `getCertificate` from `hasAnyRole('ADMIN', 'MANAGER') or self-access` to `hasAnyRole('ADMIN', 'INSTRUCTOR') or self-access`.
+    -   Updated method-level `@PreAuthorize` for `getAllCertificates` from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
 
-1. **New Tables**
-   - `instructor_student`:
-     ```
-     id: BIGINT PK
-     instructor_id: BIGINT (FK to users)
-     student_id: BIGINT (FK to users)
-     active: BOOLEAN
-     ```
+8.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/CheckoutController.java
+    -   Changed `@RequestMapping` from `/api/public` to `/api/checkout`.
+    -   Updated method-level `@PreAuthorize` from `hasRole('LEARNER')` to `hasRole('USER')` for `createCheckoutSession`.
 
-2. **Modified Tables**
-   - `users` now has many-to-many relationship with `roles` via join table `user_roles`
+9.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/models/Learner.java
+    -   Added `@OneToOne` relationship to `Users` to link a Learner to a User, enabling proper authorization checks (this was done in a previous step, but included for completeness of the RBAC summary).
 
-## Security Flow Changes
+10. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/AuthController.java
+    -   Changed `userToSave.getRoles().add(Role.LEARNER);` to `userToSave.getRoles().add(Role.USER);`.
 
-### Before:
-```
-Controller → @PreAuthorize → Service → Repository
-```
+11. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/services/UserService.java
+    -   Changed `user.getRoles().add(Role.LEARNER);` to `user.getRoles().add(Role.USER);` (2 occurrences).
+    -   Added `updateUserRole(Long userId, String newRole)` method to update a user's role.
+    -   Reverted `getUserById(Long userId)` method to return `Users` directly (not `Optional<Users>`).
+    -   **FIXED:** Corrected `PasswordEncoder` injection by changing field type from `BCryptPasswordEncoder` to `PasswordEncoder` and ensuring proper constructor injection.
 
-### After:
-```
-Controller → @PreAuthorize("isAuthenticated()")
-           → Service (implements business logic + fine-grained access control)
-           → RelationshipService (for instructor-student validation)
-           → Repository
-```
+12. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/AdminController.java
+    -   Added `changeUserRole(@PathVariable Long userId, @RequestParam String newRole)` method to change a user's role, restricted to `ADMIN` role.
 
-## Exception Handling
+13. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/config/DataLoader.java
+    -   **FIXED:** Removed redundant password encoding before calling `userService.saveUser`, as `saveUser` already handles encoding.
+    -   **FIXED:** Changed `BCryptPasswordEncoder` injection to `PasswordEncoder` interface.
 
-Added new exception hierarchy:
-```
-AccessDeniedException (Spring) ← Custom exceptions:
-   ├─ DuplicateRelationshipException
-   └─ RelationshipNotFoundException
-```
-
-## Migration Considerations
-
-1. **Data Migration Required**
-   - Need to populate initial instructor-student relationships
-   - Existing users must be mapped to proper roles
-
-2. **Backward Compatibility**
-   - Maintained original method signatures
-   - New secured methods have `Authentication` parameter
-   - Unsecured methods marked as `@Deprecated` with javadoc
-
-## Performance Impact
-
-1. **Additional Queries**
-   - Each profile access now requires:
-     1. Role check (cached)
-     2. Optional relationship check (for instructors)
-
-2. **Optimizations**
-   - Added `@Transactional(readOnly = true)` where appropriate
-   - Implemented batch fetching for relationship checks
-
-## API Changes
-
-All existing endpoints remain compatible, but now:
-- Return 403 instead of 401 for unauthorized access
-- Include more detailed error messages in payload
-
-This architecture provides proper separation of concerns while maintaining the flexibility to add more relationship types in the future.
+14. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/services/UserProfileService.java
+    -   **FIXED:** Corrected `PasswordEncoder` injection by changing field type from `BCryptPasswordEncoder` to `PasswordEncoder` and ensuring proper constructor injection.
+    -   **FIXED:** Corrected typo in `updateUserPassword` method: `userProfile.setPassword` changed to `existingProfile.setPassword`.
