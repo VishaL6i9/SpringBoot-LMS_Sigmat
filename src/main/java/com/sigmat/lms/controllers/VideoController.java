@@ -2,11 +2,13 @@ package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.models.Video;
 import com.sigmat.lms.services.VideoService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class VideoController {
     }
 
     @PostMapping("/upload")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<?> uploadVideo(
             @RequestParam("file") MultipartFile file,
             @RequestParam("title") String title,
@@ -37,11 +40,13 @@ public class VideoController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
     public ResponseEntity<List<Video>> getAllVideos() {
         return ResponseEntity.ok(videoService.getAllVideos());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
     public ResponseEntity<Video> getVideoById(@PathVariable Long id) {
         return videoService.getVideoById(id)
                 .map(ResponseEntity::ok)
@@ -49,6 +54,7 @@ public class VideoController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteVideo(@PathVariable Long id) {
         try {
             videoService.deleteVideo(id);
@@ -61,6 +67,7 @@ public class VideoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<?> updateVideo(
             @PathVariable Long id,
             @RequestParam(value = "file", required = false) MultipartFile file,
@@ -78,6 +85,7 @@ public class VideoController {
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
     public ResponseEntity<Video> searchByTitle(@RequestParam String title) {
         return videoService.searchByTitle(title)
                 .map(ResponseEntity::ok)
@@ -85,6 +93,7 @@ public class VideoController {
     }
 
     @GetMapping("/{id}/stream")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
     public void streamVideo(@PathVariable Long id, HttpServletResponse response) {
         try {
             videoService.streamVideo(id, response);

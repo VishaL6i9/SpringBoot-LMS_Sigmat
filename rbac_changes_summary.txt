@@ -1,0 +1,70 @@
+Summary of Role-Based Access Control (RBAC) Changes:
+
+1.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/models/Permission.java
+    -   Removed `MANAGER_READ`, `MANAGER_CREATE`, `MANAGER_UPDATE`, `MANAGER_DELETE` permissions.
+    -   Added `INSTRUCTOR_READ`, `INSTRUCTOR_CREATE`, `INSTRUCTOR_UPDATE`, `INSTRUCTOR_DELETE` permissions.
+
+2.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/models/Role.java
+    -   Removed `LEARNER` and `MANAGER` roles.
+    -   Renamed `LEARNER` to `USER`.
+    -   Added `INSTRUCTOR` role.
+    -   Updated permissions for `ADMIN` to include all `ADMIN_*` and `INSTRUCTOR_*` permissions.
+    -   Assigned `INSTRUCTOR_*` permissions to the `INSTRUCTOR` role.
+    -   `USER` role has no specific permissions.
+
+3.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/UserProfileController.java
+    -   Changed `@RequestMapping` from `/api/public` to `/api/user`.
+    -   Updated class-level `@PreAuthorize` from `hasAnyRole('ADMIN', 'LEARNER', 'MANAGER')` to `hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')`.
+    -   Corrected method-level `@RequestMapping` paths by removing redundant `/user` segment (e.g., `/user/profile/{userID}` became `/profile/{userID}`).
+    -   Method-level `@PreAuthorize` for self-access or ADMIN override on `getUserProfile`, `updateUserProfile`, `updateUserPassword`, `getProfileImageID`, `uploadProfileImage`, and `getProfilePic` remain unchanged in logic.
+
+4.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/CourseController.java
+    -   Changed `@RequestMapping` from `/api/public/courses` to `/api/courses`.
+    -   Updated method-level `@PreAuthorize` for `createCourse` and `updateCourse` from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+    -   Method-level `@PreAuthorize` for `deleteCourse` (ADMIN) remains unchanged.
+    -   Updated method-level `@PreAuthorize` for `getAllCourses`, `getCourseById`, `getCourseIdByName` from `hasAnyRole('ADMIN', 'MANAGER', 'LEARNER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')`.
+
+5.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/NotificationController.java
+    -   Changed `@RequestMapping` from `/api/public/notifications` to `/api/notifications`.
+    -   Updated method-level `@PreAuthorize` for `createNotification` and `sendNotificationToUsers` from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+    -   Method-level `@PreAuthorize` for `getUserNotifications`, `getUnreadNotifications`, `markAllAsRead`, `getNotificationStats` (self-access or ADMIN) remain unchanged.
+    -   Updated method-level `@PreAuthorize` for `markAsRead` to use `@notificationService.getNotificationById(#id).user.id == authentication.principal.id or hasRole('ADMIN')` (logic unchanged, but included for completeness).
+
+6.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/VideoController.java
+    -   Method-level `@PreAuthorize` for `uploadVideo` and `updateVideo` updated from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+    -   Method-level `@PreAuthorize` for `deleteVideo` (ADMIN) remains unchanged.
+    -   Method-level `@PreAuthorize` for `getAllVideos`, `getVideoById`, `searchByTitle`, `streamVideo` updated from `hasAnyRole('ADMIN', 'MANAGER', 'LEARNER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')`.
+
+7.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/CertificateController.java
+    -   Changed `@RequestMapping` from `/api/public/certificates` to `/api/certificates`.
+    -   Updated method-level `@PreAuthorize` for `createCertificate` and `updateCertificate` from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+    -   Method-level `@PreAuthorize` for `deleteCertificate` (ADMIN) remains unchanged.
+    -   Updated method-level `@PreAuthorize` for `getCertificate` from `hasAnyRole('ADMIN', 'MANAGER') or self-access` to `hasAnyRole('ADMIN', 'INSTRUCTOR') or self-access`.
+    -   Updated method-level `@PreAuthorize` for `getAllCertificates` from `hasAnyRole('ADMIN', 'MANAGER')` to `hasAnyRole('ADMIN', 'INSTRUCTOR')`.
+
+8.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/CheckoutController.java
+    -   Changed `@RequestMapping` from `/api/public` to `/api/checkout`.
+    -   Updated method-level `@PreAuthorize` from `hasRole('LEARNER')` to `hasRole('USER')` for `createCheckoutSession`.
+
+9.  File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/models/Learner.java
+    -   Added `@OneToOne` relationship to `Users` to link a Learner to a User, enabling proper authorization checks (this was done in a previous step, but included for completeness of the RBAC summary).
+
+10. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/AuthController.java
+    -   Changed `userToSave.getRoles().add(Role.LEARNER);` to `userToSave.getRoles().add(Role.USER);`.
+
+11. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/services/UserService.java
+    -   Changed `user.getRoles().add(Role.LEARNER);` to `user.getRoles().add(Role.USER);` (2 occurrences).
+    -   Added `updateUserRole(Long userId, String newRole)` method to update a user's role.
+    -   Reverted `getUserById(Long userId)` method to return `Users` directly (not `Optional<Users>`).
+    -   **FIXED:** Corrected `PasswordEncoder` injection by changing field type from `BCryptPasswordEncoder` to `PasswordEncoder` and ensuring proper constructor injection.
+
+12. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/controllers/AdminController.java
+    -   Added `changeUserRole(@PathVariable Long userId, @RequestParam String newRole)` method to change a user's role, restricted to `ADMIN` role.
+
+13. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/config/DataLoader.java
+    -   **FIXED:** Removed redundant password encoding before calling `userService.saveUser`, as `saveUser` already handles encoding.
+    -   **FIXED:** Changed `BCryptPasswordEncoder` injection to `PasswordEncoder` interface.
+
+14. File: C:/Users/Vishal Kandakatla/IdeaProjects/springboot-sigmat_lms/src/main/java/com/sigmat/lms/services/UserProfileService.java
+    -   **FIXED:** Corrected `PasswordEncoder` injection by changing field type from `BCryptPasswordEncoder` to `PasswordEncoder` and ensuring proper constructor injection.
+    -   **FIXED:** Corrected typo in `updateUserPassword` method: `userProfile.setPassword` changed to `existingProfile.setPassword`.

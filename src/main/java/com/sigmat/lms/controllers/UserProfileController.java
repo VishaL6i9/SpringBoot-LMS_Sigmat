@@ -12,14 +12,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/api/public")
+@RequestMapping("/api/user")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "file://*"})
+@PreAuthorize("hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')")
 public class UserProfileController {
 
     private final JwtService jwtService;
@@ -34,28 +36,31 @@ public class UserProfileController {
     }
 
     //Retrieve User Profile From UserID
-    @GetMapping("/user/profile/{userID}")
+    @GetMapping("/profile/{userID}")
+    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<UserProfile> getUserProfile(@PathVariable String userID) {
         UserProfile userProfile = userProfileService.getUserProfile(Long.valueOf(userID));
         return ResponseEntity.ok(userProfile);
     }
 
     //Update User Profile
-    @PutMapping("/user/profile")
+    @PutMapping("/profile")
+    @PreAuthorize("#userProfile.users.id == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<UserProfile> updateUserProfile(@RequestBody UserProfile userProfile) {
         UserProfile updatedProfile = userProfileService.updateUserProfile(userProfile);
         return ResponseEntity.ok(updatedProfile);
     }
 
     //Update User Password
-    @PutMapping("/user/profile/password")
+    @PutMapping("/profile/password")
+    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<Void> updateUserPassword(@RequestParam Long userID, @RequestParam String newPassword) {
         userProfileService.updateUserPassword(userID, newPassword);
         return ResponseEntity.ok().build();
     }
 
     //Retrieve UserID From JWT
-    @GetMapping("/user/profile/getuserID")
+    @GetMapping("/profile/getuserID")
     public ResponseEntity<Long> getUserID(@RequestHeader("Authorization") String token) {
         if (token.startsWith("Bearer ")) {
             token = token.substring(7).trim();
@@ -74,14 +79,16 @@ public class UserProfileController {
     }
     
     //Retrieve ProfileImageID From UserID
-    @GetMapping("/user/profile/getProfileImageID/{userID}")
+    @GetMapping("/profile/getProfileImageID/{userID}")
+    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<Long> getProfileImageID(@PathVariable Long userID) {
         Long profileImageID = userProfileService.getProfileImageID(userID);
         return ResponseEntity.ok(profileImageID);
     }
     
     //Save ProfileImage With UserID
-    @PostMapping("/user/profile/pic/upload/{userId}")
+    @PostMapping("/profile/pic/upload/{userId}")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<UserProfile> uploadProfileImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file) {
         try {
             UserProfile updatedProfile = userProfileService.saveProfileImage(userId, file);
@@ -96,7 +103,8 @@ public class UserProfileController {
         }
     }
     
-    @GetMapping("/user/profile/pic/{userId}")
+    @GetMapping("/profile/pic/{userId}")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
     public ResponseEntity<?> getProfilePic(@PathVariable Long userId) {
         try {
             UserProfile userProfile = userProfileService.getUserProfileWithImage(userId);

@@ -1,7 +1,7 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.Certificate;
-import com.sigmat.lms.models.CertificateDTO; // Import your DTO
+import com.sigmat.lms.models.CertificateDTO;
 import com.sigmat.lms.repo.CertificateRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

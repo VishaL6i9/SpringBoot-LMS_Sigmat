@@ -13,17 +13,17 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
-@RequestMapping("/api/public/certificates")
+@RequestMapping("/api/certificates")
 public class CertificateController {
 
     @Autowired
@@ -40,6 +40,7 @@ public class CertificateController {
     private CourseRepo courseRepo;
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR') or (@certificateService.getCertificate(#id).learner.user.id == authentication.principal.id)")
     public ResponseEntity<CertificateDTO> getCertificate(@PathVariable Long id) {
         Optional<CertificateDTO> certificateDTO = certificateService.getCertificateDtoById(id); 
 
@@ -48,11 +49,13 @@ public class CertificateController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public List<CertificateDTO> getAllCertificates() {
         return certificateService.getAllCertificateDtos(); 
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Certificate> createCertificate(
             @RequestParam("learnerId") Long learnerId,
             @RequestParam("courseId") Long courseId,
@@ -93,6 +96,7 @@ public class CertificateController {
     }
     
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Certificate> updateCertificate(
             @PathVariable Long id,
             @RequestPart("certificate") Certificate updatedCertificate,
@@ -119,6 +123,7 @@ public class CertificateController {
 
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCertificate(@PathVariable Long id) {
         certificateService.deleteCertificate(id);
         return ResponseEntity.noContent().build();

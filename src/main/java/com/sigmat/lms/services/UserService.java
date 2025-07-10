@@ -13,7 +13,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,16 +30,17 @@ public class UserService {
     private final UserProfileRepo userProfileRepository;
     private final JwtService jwtUtil;
     private final EmailService emailService; 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private PasswordEncoder passwordEncoder;
     private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
 
     private final Set<String> invalidatedTokens = new HashSet<>();
 
-    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService) {
+    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.jwtUtil = jwtUtil;
         this.emailService = emailService; 
+        this.passwordEncoder = passwordEncoder;
     }
 
     public boolean validateUser(String username, String password) {
@@ -132,7 +133,7 @@ public class UserService {
                         user.setEmail(values[2]);
                         user.setFirstName(values[3]);
                         user.setLastName(values[4]);
-                        user.getRoles().add(Role.LEARNER);
+                        user.getRoles().add(Role.USER);
 
                         String verificationToken = UUID.randomUUID().toString();
                         user.setVerificationToken(verificationToken);
@@ -153,7 +154,7 @@ public class UserService {
                         user.setEmail(row.getCell(2).getStringCellValue());
                         user.setFirstName(row.getCell(3).getStringCellValue());
                         user.setLastName(row.getCell(4).getStringCellValue());
-                        user.getRoles().add(Role.LEARNER);
+                        user.getRoles().add(Role.USER);
 
                         String verificationToken = UUID.randomUUID().toString();
                         user.setVerificationToken(verificationToken);
@@ -219,5 +220,22 @@ public class UserService {
 
     public Users getUserById(Long userId) {
         return userRepository.findById(userId);
+    }
+
+    @Transactional
+    public void updateUserRole(Long userId, String newRole) {
+        Users user = userRepository.findById(userId);
+        if (user == null) {
+            throw new RuntimeException("User not found with ID: " + userId);
+        }
+
+        try {
+            Role role = Role.valueOf(newRole.toUpperCase());
+            user.getRoles().clear();
+            user.getRoles().add(role);
+            userRepository.save(user);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid role specified: " + newRole);
+        }
     }
 }

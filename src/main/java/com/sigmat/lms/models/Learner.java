@@ -1,7 +1,10 @@
 package com.sigmat.lms.models;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 @Entity
@@ -19,5 +22,9 @@ public class Learner {
     private String email;
     private String phoneNo;
     private LocalDate joinDate;
+
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private Users user;
 
 }

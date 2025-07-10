@@ -5,13 +5,14 @@ import com.sigmat.lms.services.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/public/courses")
+@RequestMapping("/api/courses")
 public class CourseController {
 
     private final CourseService courseService;
@@ -22,12 +23,14 @@ public class CourseController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Course> createCourse(@RequestBody Course course) {
         Course savedCourse = courseService.saveCourse(course);
         return new ResponseEntity<>(savedCourse, HttpStatus.CREATED);
     }
 
     @PutMapping("/{courseId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Course> updateCourse(@PathVariable Long courseId, @RequestBody Course courseDetails) {
         Course updatedCourse = courseService.updateCourse(courseId, courseDetails);
 
@@ -39,12 +42,14 @@ public class CourseController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
     public ResponseEntity<List<Course>> getAllCourses() {
         List<Course> courses = courseService.getAllCourses();
         return new ResponseEntity<>(courses, HttpStatus.OK);
     }
 
     @GetMapping("/{courseId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
     public ResponseEntity<Course> getCourseById(@PathVariable Long courseId) {
         Optional<Course> course = courseService.getCourseById(courseId);
         return course.map(ResponseEntity::ok)
@@ -52,6 +57,7 @@ public class CourseController {
     }
 
     @GetMapping("/{courseCode}/id")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
     public ResponseEntity<Long> getCourseIdByName(@PathVariable String courseCode) {
         Optional<Long> courseId = courseService.getCourseIdByCode(courseCode);
         return courseId.map(id -> ResponseEntity.ok(id))
@@ -59,6 +65,7 @@ public class CourseController {
     }
     
     @DeleteMapping("/{courseId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCourse(@PathVariable Long courseId) {
         courseService.deleteCourse(courseId);
         return ResponseEntity.noContent().build();

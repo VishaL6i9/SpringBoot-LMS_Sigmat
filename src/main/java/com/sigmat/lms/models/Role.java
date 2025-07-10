@@ -9,25 +9,27 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.sigmat.lms.models.Permission.*;
+
 @RequiredArgsConstructor
 @Getter
 public enum Role {
-    LEARNER(Set.of()), 
+    USER(Set.of()), 
     ADMIN(Set.of(
-            Permission.ADMIN_READ,
-            Permission.ADMIN_CREATE,
-            Permission.ADMIN_UPDATE,
-            Permission.ADMIN_DELETE,
-            Permission.MANAGER_READ,
-            Permission.MANAGER_CREATE,
-            Permission.MANAGER_UPDATE,
-            Permission.MANAGER_DELETE
+            ADMIN_READ,
+            ADMIN_CREATE,
+            ADMIN_UPDATE,
+            ADMIN_DELETE,
+            INSTRUCTOR_READ,
+            INSTRUCTOR_CREATE,
+            INSTRUCTOR_UPDATE,
+            INSTRUCTOR_DELETE
     )),
-    MANAGER(Set.of(
-            Permission.MANAGER_READ,
-            Permission.MANAGER_CREATE,
-            Permission.MANAGER_UPDATE,
-            Permission.MANAGER_DELETE
+    INSTRUCTOR(Set.of(
+            INSTRUCTOR_READ,
+            INSTRUCTOR_CREATE,
+            INSTRUCTOR_UPDATE,
+            INSTRUCTOR_DELETE
     ));
 
     private final Set<Permission> permissions;

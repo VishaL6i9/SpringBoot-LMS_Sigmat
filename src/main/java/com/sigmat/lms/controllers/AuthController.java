@@ -1,16 +1,17 @@
 package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.models.Role;
+import com.sigmat.lms.models.UserDTO;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.logging.Logger;
-import com.sigmat.lms.models.UserDTO;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/public")
@@ -58,7 +59,7 @@ public class AuthController {
         if (newUser .getRoles() != null && !newUser .getRoles().isEmpty()) {
             userToSave.getRoles().addAll(newUser .getRoles());
         } else {
-            userToSave.getRoles().add(Role.LEARNER);
+            userToSave.getRoles().add(Role.USER);
         }
 
         try {

@@ -25,7 +25,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/delete/user/{username}")
-    public ResponseEntity<?> deleteUser (@PathVariable String username) {
+    public ResponseEntity<?> deleteUser(@PathVariable String username) {
         try {
             userService.deleteUserByUsername(username);
             return ResponseEntity.ok().body("User  deleted successfully!");
@@ -51,6 +51,16 @@ public class AdminController {
             return ResponseEntity.ok().body("Users deleted successfully!");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error occurred during deletion: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/user/{userId}/role")
+    public ResponseEntity<?> changeUserRole(@PathVariable Long userId, @RequestParam String newRole) {
+        try {
+            userService.updateUserRole(userId, newRole);
+            return ResponseEntity.ok().body("User role updated successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("Error updating user role: " + e.getMessage());
         }
     }
 }

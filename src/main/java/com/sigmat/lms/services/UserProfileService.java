@@ -8,7 +8,7 @@ import com.sigmat.lms.repo.ProfileImageRepo;
 import com.sigmat.lms.repo.UserProfileRepo;
 import com.sigmat.lms.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,16 +19,17 @@ import java.util.Optional;
 @Service
 public class UserProfileService {
 
-    @Autowired
-    private UserProfileRepo userProfileRepository;
+    private final UserProfileRepo userProfileRepository;
+    private final UserRepo userRepo;
+    private final ProfileImageRepo profileImageRepo; 
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UserRepo userRepo;
-
-    @Autowired
-    private ProfileImageRepo profileImageRepo; 
-
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    public UserProfileService(UserProfileRepo userProfileRepository, UserRepo userRepo, ProfileImageRepo profileImageRepo, PasswordEncoder passwordEncoder) {
+        this.userProfileRepository = userProfileRepository;
+        this.userRepo = userRepo;
+        this.profileImageRepo = profileImageRepo;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public UserProfile getUserProfile(Long userId) {
         return userProfileRepository.findByUsersId(userId);
@@ -72,7 +73,7 @@ public class UserProfileService {
             user.setPassword(encodedPassword);
 
             if (existingProfile != null) {
-                existingProfile.setPassword(encodedPassword);
+                existingProfile.setPassword(passwordEncoder.encode(newPassword));
                 userRepo.save(user);
                 userProfileRepository.save(existingProfile);
             } else {
