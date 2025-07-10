@@ -37,7 +37,7 @@ public class UserProfileController {
 
     //Retrieve User Profile From UserID
     @GetMapping("/profile/{userID}")
-    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userID == authentication.principal.id or hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')")
     public ResponseEntity<UserProfile> getUserProfile(@PathVariable String userID) {
         UserProfile userProfile = userProfileService.getUserProfile(Long.valueOf(userID));
         return ResponseEntity.ok(userProfile);
@@ -45,7 +45,7 @@ public class UserProfileController {
 
     //Update User Profile
     @PutMapping("/profile")
-    @PreAuthorize("#userProfile.users.id == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userProfile.users.id == authentication.principal.id or hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')")
     public ResponseEntity<UserProfile> updateUserProfile(@RequestBody UserProfile userProfile) {
         UserProfile updatedProfile = userProfileService.updateUserProfile(userProfile);
         return ResponseEntity.ok(updatedProfile);
@@ -53,7 +53,7 @@ public class UserProfileController {
 
     //Update User Password
     @PutMapping("/profile/password")
-    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userID == authentication.principal.id or hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')")
     public ResponseEntity<Void> updateUserPassword(@RequestParam Long userID, @RequestParam String newPassword) {
         userProfileService.updateUserPassword(userID, newPassword);
         return ResponseEntity.ok().build();
@@ -80,7 +80,7 @@ public class UserProfileController {
     
     //Retrieve ProfileImageID From UserID
     @GetMapping("/profile/getProfileImageID/{userID}")
-    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userID == authentication.principal.id or hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')")
     public ResponseEntity<Long> getProfileImageID(@PathVariable Long userID) {
         Long profileImageID = userProfileService.getProfileImageID(userID);
         return ResponseEntity.ok(profileImageID);
@@ -88,7 +88,7 @@ public class UserProfileController {
     
     //Save ProfileImage With UserID
     @PostMapping("/profile/pic/upload/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userId == authentication.principal.id or hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')")
     public ResponseEntity<UserProfile> uploadProfileImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file) {
         try {
             UserProfile updatedProfile = userProfileService.saveProfileImage(userId, file);
@@ -104,7 +104,7 @@ public class UserProfileController {
     }
     
     @GetMapping("/profile/pic/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userId == authentication.principal.id or hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')")
     public ResponseEntity<?> getProfilePic(@PathVariable Long userId) {
         try {
             UserProfile userProfile = userProfileService.getUserProfileWithImage(userId);
