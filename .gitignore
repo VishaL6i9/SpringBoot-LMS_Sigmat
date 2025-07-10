@@ -33,3 +33,4 @@ build/
 .vscode/
 
 /src/main/resources/application.properties
+/working_10072025.jar
