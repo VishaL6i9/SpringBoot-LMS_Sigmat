@@ -3,6 +3,8 @@ package com.sigmat.lms.models;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Set;
+
 @Setter
 @Data
 @Entity
@@ -23,8 +25,13 @@ public class Course {
     private Long courseFee;
     private String language;
     private String courseCategory;
-    @ManyToOne
-    @JoinColumn(name = "instructor_id", referencedColumnName = "instructor_id")
-    private Instructor instructor;
+
+    @ManyToMany
+    @JoinTable(
+        name = "course_instructors",
+        joinColumns = @JoinColumn(name = "course_id"),
+        inverseJoinColumns = @JoinColumn(name = "instructor_id")
+    )
+    private Set<Instructor> instructors;
 
 }

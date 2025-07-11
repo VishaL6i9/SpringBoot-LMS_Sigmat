@@ -1,10 +1,12 @@
 package com.sigmat.lms.controllers;
 
+import com.sigmat.lms.models.Enrollment;
 import com.sigmat.lms.models.ProfileImage;
 import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.repo.ProfileImageRepo;
 import com.sigmat.lms.repo.UserRepo;
+import com.sigmat.lms.services.EnrollmentService;
 import com.sigmat.lms.services.JwtService;
 import com.sigmat.lms.services.ProfileImageService;
 import com.sigmat.lms.services.UserProfileService;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/user")
@@ -27,12 +30,14 @@ public class UserProfileController {
     private final JwtService jwtService;
     private final UserProfileService userProfileService;
     private final UserRepo userRepo;
+    private final EnrollmentService enrollmentService; // Inject EnrollmentService
 
     @Autowired
-    public UserProfileController(JwtService jwtService, UserProfileService userProfileService, UserRepo userRepo, ProfileImageRepo profileImageRepo, ProfileImageService profileImageService) {
+    public UserProfileController(JwtService jwtService, UserProfileService userProfileService, UserRepo userRepo, ProfileImageRepo profileImageRepo, ProfileImageService profileImageService, EnrollmentService enrollmentService) {
         this.jwtService = jwtService;
         this.userProfileService = userProfileService;
         this.userRepo = userRepo;
+        this.enrollmentService = enrollmentService; // Initialize EnrollmentService
     }
 
     //Retrieve User Profile From UserID
@@ -128,5 +133,25 @@ public class UserProfileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to retrieve profile picture: " + e.getMessage());
         }
+    }
+
+    // New endpoint to enroll a user in a course
+    @PostMapping("/enroll")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Enrollment> enrollUserInCourse(@RequestParam Long userId, @RequestParam Long courseId, @RequestParam(required = false) Long instructorId) {
+        try {
+            Enrollment enrollment = enrollmentService.enrollUserInCourse(userId, courseId, instructorId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(enrollment);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(null); // Or a more specific error response
+        }
+    }
+
+    // New endpoint to get all enrollments for a user
+    @GetMapping("/enrollments/{userId}")
+    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    public ResponseEntity<List<Enrollment>> getUserEnrollments(@PathVariable Long userId) {
+        List<Enrollment> enrollments = enrollmentService.getEnrollmentsByUserId(userId);
+        return ResponseEntity.ok(enrollments);
     }
 }

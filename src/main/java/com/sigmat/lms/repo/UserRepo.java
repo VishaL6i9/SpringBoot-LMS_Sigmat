@@ -2,9 +2,13 @@ package com.sigmat.lms.repo;
 
 import com.sigmat.lms.models.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface UserRepo extends JpaRepository<Users, Integer> {
+import java.util.Optional;
+
+@Repository
+public interface UserRepo extends JpaRepository<Users, Long> {
     Users findByUsername(String username);
-    Users findById(Long id);
+    Optional<Users> findById(Long id);
     Users findByVerificationToken(String verificationToken);
 }

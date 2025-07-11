@@ -2,6 +2,7 @@ package com.sigmat.lms.services;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import com.sigmat.lms.models.Enrollment;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.models.Users;
@@ -30,17 +31,19 @@ public class UserService {
     private final UserProfileRepo userProfileRepository;
     private final JwtService jwtUtil;
     private final EmailService emailService; 
+    private final EnrollmentService enrollmentService; // Inject EnrollmentService
     private PasswordEncoder passwordEncoder;
     private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
 
     private final Set<String> invalidatedTokens = new HashSet<>();
 
-    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService, PasswordEncoder passwordEncoder, EnrollmentService enrollmentService) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.jwtUtil = jwtUtil;
         this.emailService = emailService; 
         this.passwordEncoder = passwordEncoder;
+        this.enrollmentService = enrollmentService; // Initialize EnrollmentService
     }
 
     public boolean validateUser(String username, String password) {
@@ -101,6 +104,10 @@ public class UserService {
         if (user == null) {
             throw new RuntimeException("User not found: " + username);
         }
+
+        // Delete associated enrollments first
+        List<Enrollment> enrollments = enrollmentService.getEnrollmentsByUserId(user.getId());
+        enrollments.forEach(enrollment -> enrollmentService.deleteEnrollment(enrollment.getId()));
 
         UserProfile userProfile = userProfileRepository.findByUsers(user);
         if (userProfile != null) {
@@ -219,15 +226,13 @@ public class UserService {
     }
 
     public Users getUserById(Long userId) {
-        return userRepository.findById(userId);
+        return userRepository.findById(userId).orElse(null);
     }
 
     @Transactional
     public void updateUserRole(Long userId, String newRole) {
-        Users user = userRepository.findById(userId);
-        if (user == null) {
-            throw new RuntimeException("User not found with ID: " + userId);
-        }
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
         try {
             Role role = Role.valueOf(newRole.toUpperCase());
@@ -237,5 +242,9 @@ public class UserService {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid role specified: " + newRole);
         }
+    }
+
+    public List<Enrollment> getUserEnrollments(Long userId) {
+        return enrollmentService.getEnrollmentsByUserId(userId);
     }
 }

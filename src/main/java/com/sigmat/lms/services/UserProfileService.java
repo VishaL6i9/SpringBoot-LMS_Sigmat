@@ -7,7 +7,6 @@ import com.sigmat.lms.models.Users;
 import com.sigmat.lms.repo.ProfileImageRepo;
 import com.sigmat.lms.repo.UserProfileRepo;
 import com.sigmat.lms.repo.UserRepo;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +36,7 @@ public class UserProfileService {
 
     public UserProfile updateUserProfile(UserProfile userProfile) {
         UserProfile existingProfile = userProfileRepository.findByUsersId(userProfile.getId());
-        Optional<Users> existingUser  = Optional.ofNullable(userRepo.findById(userProfile.getId()));
+        Optional<Users> existingUser  = userRepo.findById(userProfile.getId());
 
         if (existingProfile != null && existingUser .isPresent()) {
             Users updatedUser  = existingUser .get();
@@ -64,7 +63,7 @@ public class UserProfileService {
     }
 
     public void updateUserPassword(Long userId, String newPassword) {
-        Optional<Users> existingUser  = Optional.ofNullable(userRepo.findById(userId));
+        Optional<Users> existingUser  = userRepo.findById(userId);
         UserProfile existingProfile = userProfileRepository.findByUsersId(userId);
 
         if (existingUser .isPresent()) {
