@@ -120,14 +120,12 @@ The application implements a robust RBAC system with the following roles and the
 Permissions are managed through `@PreAuthorize` annotations on controller methods, ensuring that only authorized roles can access specific endpoints or perform certain actions.
 
 ## Postman Test Cases
-A `postman_test_cases.txt` file is provided in the project root, containing sample Postman requests to test various API endpoints and verify the RBAC implementation.
+Sample test cases for Postman to verify the role-based access control are provided in `postman_test_cases.md`.
 
-**To use them:**
-1.  Ensure the backend is running.
-2.  Import the requests into Postman.
-3.  Obtain a JWT token by authenticating a user via `/api/public/authenticate`.
-4.  Include the JWT token in the `Authorization` header as `Bearer <your_jwt_token>` for all protected endpoints.
-5.  Ensure you have users with `ADMIN`, `INSTRUCTOR`, and `USER` roles in your database for comprehensive testing.
+**Before you start:**
+
+*   **Ensure you have users with `ADMIN`, `INSTRUCTOR`, and `USER` roles in your database.** If not, you'll need to create them first.
+*   **Authentication:** All protected endpoints require a JWT token in the `Authorization` header (e.g., `Bearer <your_jwt_token>`). You'll need to obtain this token by authenticating a user.
 
 ## Contributing
 Contributions are welcome! Please fork the repository and submit pull requests.
