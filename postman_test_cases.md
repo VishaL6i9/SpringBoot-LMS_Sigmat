@@ -59,49 +59,62 @@ Here are sample test cases for Postman to verify the role-based access control.
 
 ### 3. UserProfileController Tests (`/api/user`)
 
-**All endpoints in this controller require `ADMIN`, `INSTRUCTOR`, or `USER` roles at the class level. Specific methods have additional checks.**
+**All endpoints in this controller require a valid JWT token in the `Authorization` header.** The server will programmatically check if the user is an `ADMIN` or is accessing their own resource.
 
 *   **Get User Profile by ID**
     *   **Endpoint:** `/api/user/profile/{userID}` (replace `{userID}` with an actual user ID)
     *   **Method:** `GET`
-    *   **Required Role:** `ADMIN` (any user profile), `USER`/`INSTRUCTOR` (their own user profile)
-    *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - own ID):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - other ID):** `403 Forbidden`
+    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Expected Status (Admin or Owner):** `200 OK`
+    *   **Expected Status (Non-Owner):** `403 Forbidden`
     *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Update User Profile**
     *   **Endpoint:** `/api/user/profile`
     *   **Method:** `PUT`
-    *   **Required Role:** `ADMIN` (any user profile), `USER`/`INSTRUCTOR` (their own user profile)
-    *   **Request Body (JSON):** A `UserProfile` object, ensure `user.id` matches the authenticated user's ID or you are an ADMIN.
+    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Request Body (JSON):** A `UserProfile` object. The `users.id` in the body must match the ID of the authenticated user (from the JWT), or the user must be an `ADMIN`.
         ```json
         {
-            "id": 1, // UserProfile ID (Optional for creation, required for update)
+            "id": 1, 
             "firstName": "UpdatedFirstName",
             "lastName": "UpdatedLastName",
-            "email": "updated.email@example.com", // Add email field
-            "phone": "123-456-7890", // Add phone field
-            "timezone": "UTC", // Add timezone field
-            "language": "en", // Add language field
-            "profileImage": null, // Add profileImage field (can be null or a ProfileImage object)
+            "email": "updated.email@example.com",
+            "phone": "123-456-7890",
+            "timezone": "UTC",
+            "language": "en",
+            "profileImage": null,
             "users": {
-                "id": 1 // User ID associated with the profile (Required)
+                "id": 1 
             }
         }
         ```
-    *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - own profile):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - other profile):** `403 Forbidden`
+    *   **Expected Status (Admin or Owner):** `200 OK`
+    *   **Expected Status (Non-Owner):** `403 Forbidden`
     *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Update User Password**
     *   **Endpoint:** `/api/user/profile/password?userID={userID}&newPassword={newPassword}`
     *   **Method:** `PUT`
-    *   **Required Role:** `ADMIN` (any user), `USER`/`INSTRUCTOR` (their own password)
-    *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - own ID):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - other ID):** `403 Forbidden`
+    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Expected Status (Admin or Owner):** `200 OK`
+    *   **Expected Status (Non-Owner):** `403 Forbidden`
+    *   **Expected Status (Unauthorized):** `403 Forbidden`
+
+*   **Enroll User in Course**
+    *   **Endpoint:** `/api/user/enroll?userId={userId}&courseId={courseId}`
+    *   **Method:** `POST`
+    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Expected Status (Admin or Owner):** `201 Created`
+    *   **Expected Status (Non-Owner):** `403 Forbidden`
+    *   **Expected Status (Unauthorized):** `403 Forbidden`
+
+*   **Get User Enrollments**
+    *   **Endpoint:** `/api/user/enrollments/{userId}`
+    *   **Method:** `GET`
+    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Expected Status (Admin or Owner):** `200 OK`
+    *   **Expected Status (Non-Owner):** `403 Forbidden`
     *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 ---
