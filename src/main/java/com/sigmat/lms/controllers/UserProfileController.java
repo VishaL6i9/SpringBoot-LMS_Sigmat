@@ -1,65 +1,79 @@
 package com.sigmat.lms.controllers;
 
-import com.sigmat.lms.models.Enrollment;
-import com.sigmat.lms.models.ProfileImage;
-import com.sigmat.lms.models.UserProfile;
-import com.sigmat.lms.models.Users;
+import com.sigmat.lms.models.*;
 import com.sigmat.lms.repo.ProfileImageRepo;
 import com.sigmat.lms.repo.UserRepo;
-import com.sigmat.lms.services.EnrollmentService;
-import com.sigmat.lms.services.JwtService;
-import com.sigmat.lms.services.ProfileImageService;
-import com.sigmat.lms.services.UserProfileService;
+import com.sigmat.lms.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/user")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "file://*"})
-@PreAuthorize("hasAnyRole('ADMIN', 'USER', 'INSTRUCTOR')")
 public class UserProfileController {
 
     private final JwtService jwtService;
     private final UserProfileService userProfileService;
     private final UserRepo userRepo;
-    private final EnrollmentService enrollmentService; // Inject EnrollmentService
+    private final EnrollmentService enrollmentService;
+    private final UserService userService;
 
     @Autowired
-    public UserProfileController(JwtService jwtService, UserProfileService userProfileService, UserRepo userRepo, ProfileImageRepo profileImageRepo, ProfileImageService profileImageService, EnrollmentService enrollmentService) {
+    public UserProfileController(JwtService jwtService, UserProfileService userProfileService, UserRepo userRepo, ProfileImageRepo profileImageRepo, ProfileImageService profileImageService, EnrollmentService enrollmentService, UserService userService) {
         this.jwtService = jwtService;
         this.userProfileService = userProfileService;
         this.userRepo = userRepo;
-        this.enrollmentService = enrollmentService; // Initialize EnrollmentService
+        this.enrollmentService = enrollmentService;
+        this.userService = userService;
+    }
+
+    private boolean isAuthorized(String token, Long resourceUserId) {
+        String jwt = token.substring(7);
+        String username = jwtService.extractUserName(jwt);
+        Users user = userService.findByUsername(username);
+        if (user != null) {
+            if (user.getRoles().contains(Role.ADMIN)) {
+                return true;
+            }
+            return user.getId().equals(resourceUserId);
+        }
+        return false;
     }
 
     //Retrieve User Profile From UserID
     @GetMapping("/profile/{userID}")
-    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
-    public ResponseEntity<UserProfile> getUserProfile(@PathVariable String userID) {
-        UserProfile userProfile = userProfileService.getUserProfile(Long.valueOf(userID));
+    public ResponseEntity<UserProfile> getUserProfile(@PathVariable Long userID, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userID)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        UserProfile userProfile = userProfileService.getUserProfile(userID);
         return ResponseEntity.ok(userProfile);
     }
 
     //Update User Profile
     @PutMapping("/profile")
-    @PreAuthorize("#userProfile.users.id == authentication.principal.id or hasRole('ADMIN')")
-    public ResponseEntity<UserProfile> updateUserProfile(@RequestBody UserProfile userProfile) {
+    public ResponseEntity<UserProfile> updateUserProfile(@RequestBody UserProfile userProfile, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userProfile.getUsers().getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         UserProfile updatedProfile = userProfileService.updateUserProfile(userProfile);
         return ResponseEntity.ok(updatedProfile);
     }
 
     //Update User Password
     @PutMapping("/profile/password")
-    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
-    public ResponseEntity<Void> updateUserPassword(@RequestParam Long userID, @RequestParam String newPassword) {
+    public ResponseEntity<Void> updateUserPassword(@RequestParam Long userID, @RequestParam String newPassword, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userID)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         userProfileService.updateUserPassword(userID, newPassword);
         return ResponseEntity.ok().build();
     }
@@ -85,16 +99,20 @@ public class UserProfileController {
     
     //Retrieve ProfileImageID From UserID
     @GetMapping("/profile/getProfileImageID/{userID}")
-    @PreAuthorize("#userID == authentication.principal.id or hasRole('ADMIN')")
-    public ResponseEntity<Long> getProfileImageID(@PathVariable Long userID) {
+    public ResponseEntity<Long> getProfileImageID(@PathVariable Long userID, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userID)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         Long profileImageID = userProfileService.getProfileImageID(userID);
         return ResponseEntity.ok(profileImageID);
     }
     
     //Save ProfileImage With UserID
     @PostMapping("/profile/pic/upload/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
-    public ResponseEntity<UserProfile> uploadProfileImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<UserProfile> uploadProfileImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         try {
             UserProfile updatedProfile = userProfileService.saveProfileImage(userId, file);
 
@@ -109,8 +127,10 @@ public class UserProfileController {
     }
     
     @GetMapping("/profile/pic/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
-    public ResponseEntity<?> getProfilePic(@PathVariable Long userId) {
+    public ResponseEntity<?> getProfilePic(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         try {
             UserProfile userProfile = userProfileService.getUserProfileWithImage(userId);
     
@@ -137,8 +157,10 @@ public class UserProfileController {
 
     // New endpoint to enroll a user in a course
     @PostMapping("/enroll")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Enrollment> enrollUserInCourse(@RequestParam Long userId, @RequestParam Long courseId, @RequestParam(required = false) Long instructorId) {
+    public ResponseEntity<Enrollment> enrollUserInCourse(@RequestParam Long userId, @RequestParam Long courseId, @RequestParam(required = false) Long instructorId, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         try {
             Enrollment enrollment = enrollmentService.enrollUserInCourse(userId, courseId, instructorId);
             return ResponseEntity.status(HttpStatus.CREATED).body(enrollment);
@@ -149,8 +171,10 @@ public class UserProfileController {
 
     // New endpoint to get all enrollments for a user
     @GetMapping("/enrollments/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
-    public ResponseEntity<List<Enrollment>> getUserEnrollments(@PathVariable Long userId) {
+    public ResponseEntity<List<Enrollment>> getUserEnrollments(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         List<Enrollment> enrollments = enrollmentService.getEnrollmentsByUserId(userId);
         return ResponseEntity.ok(enrollments);
     }
