@@ -3,6 +3,7 @@ package com.sigmat.lms.controllers;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.UserDTO;
 import com.sigmat.lms.models.Users;
+import com.sigmat.lms.services.JwtService;
 import com.sigmat.lms.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 @RestController
@@ -19,6 +21,9 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private JwtService jwtService;
     private static final Logger LOGGER = Logger.getLogger(AuthController.class.getName());
 
     @GetMapping("/users")
@@ -92,6 +97,24 @@ public class AuthController {
             return ResponseEntity.ok().body("Logout successful!");
         } else {
             return ResponseEntity.status(400).body("Logout failed! Invalid token.");
+        }
+    }
+
+    @GetMapping("/role")
+    public ResponseEntity<?> getRole(@RequestHeader("Authorization") String token) {
+        try {
+            String jwt = token.substring(7);
+            String username = jwtService.extractUserName(jwt);
+            Users user = userService.findByUsername(username);
+            if (user != null) {
+                Set<Role> roles = user.getRoles();
+                return ResponseEntity.ok().body(roles);
+            } else {
+                return ResponseEntity.status(404).body("User not found");
+            }
+        } catch (Exception e) {
+            LOGGER.severe("Failed to fetch user role: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
     }
 

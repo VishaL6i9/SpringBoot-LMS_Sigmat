@@ -229,6 +229,10 @@ public class UserService {
         return userRepository.findById(userId).orElse(null);
     }
 
+    public Users findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
     @Transactional
     public void updateUserRole(Long userId, String newRole) {
         Users user = userRepository.findById(userId)
