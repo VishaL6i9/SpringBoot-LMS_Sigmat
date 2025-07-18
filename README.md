@@ -73,6 +73,7 @@ The API is secured with JWT. Most endpoints require authentication.
 
 ### Authentication
 *   `POST /api/public/authenticate`: Authenticate a user and receive a JWT token.
+*   `GET /api/public/role`: Get the role of the currently logged-in user.
 
 ### Admin Controller (`/api/admin`) - Requires `ADMIN` Role
 *   `GET /api/admin/users`: Get all users.
