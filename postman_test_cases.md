@@ -21,6 +21,13 @@ Here are sample test cases for Postman to verify the role-based access control.
     ```
 *   **Expected Response:** A JWT token in the response body. Use this token for subsequent requests.
 
+*   **Get User Role**
+    *   **Endpoint:** `/api/public/role`
+    *   **Method:** `GET`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`, `USER`
+    *   **Expected Status (All Roles):** `200 OK`
+    *   **Expected Status (Unauthorized):** `403 Forbidden`
+
 ---
 
 ### 2. AdminController Tests (`/api/admin`)
