@@ -37,43 +37,33 @@ Here are sample test cases for Postman to verify the role-based access control.
 *   **Get All Users**
     *   **Endpoint:** `/api/admin/users`
     *   **Method:** `GET`
-    *   **Required Role:** `ADMIN`
     *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
 
 *   **Delete User by Username**
-    *   **Endpoint:** `/api/admin/delete/user/{username}` (replace `{username}` with an actual username)
+    *   **Endpoint:** `/api/admin/delete/user/{username}`
     *   **Method:** `DELETE`
-    *   **Required Role:** `ADMIN`
     *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
 
 *   **Change User Role**
-    *   **Endpoint:** `/api/admin/user/{userId}/role?newRole={newRole}` (replace `{userId}` with an actual user ID and `{newRole}` with ADMIN, INSTRUCTOR, or USER)
+    *   **Endpoint:** `/api/admin/user/{userId}/role?newRole={newRole}`
     *   **Method:** `PUT`
-    *   **Required Role:** `ADMIN`
     *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
 
 ---
 
 ### 3. UserProfileController Tests (`/api/user`)
 
-**All endpoints in this controller require a valid JWT token in the `Authorization` header.** The server will programmatically check if the user is an `ADMIN` or is accessing their own resource.
-
 *   **Get User Profile by ID**
-    *   **Endpoint:** `/api/user/profile/{userID}` (replace `{userID}` with an actual user ID)
+    *   **Endpoint:** `/api/user/profile/{userID}`
     *   **Method:** `GET`
-    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Required Role:** `ADMIN` or Owner
     *   **Expected Status (Admin or Owner):** `200 OK`
-    *   **Expected Status (Non-Owner):** `403 Forbidden`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Update User Profile**
     *   **Endpoint:** `/api/user/profile`
     *   **Method:** `PUT`
-    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
-    *   **Request Body (JSON):** A `UserProfile` object. The `users.id` in the body must match the ID of the authenticated user (from the JWT), or the user must be an `ADMIN`.
+    *   **Required Role:** `ADMIN` or Owner
+    *   **Request Body (JSON):**
         ```json
         {
             "id": 1, 
@@ -90,32 +80,24 @@ Here are sample test cases for Postman to verify the role-based access control.
         }
         ```
     *   **Expected Status (Admin or Owner):** `200 OK`
-    *   **Expected Status (Non-Owner):** `403 Forbidden`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Update User Password**
     *   **Endpoint:** `/api/user/profile/password?userID={userID}&newPassword={newPassword}`
     *   **Method:** `PUT`
-    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Required Role:** `ADMIN` or Owner
     *   **Expected Status (Admin or Owner):** `200 OK`
-    *   **Expected Status (Non-Owner):** `403 Forbidden`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Enroll User in Course**
     *   **Endpoint:** `/api/user/enroll?userId={userId}&courseId={courseId}`
     *   **Method:** `POST`
-    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Required Role:** `ADMIN` or Owner
     *   **Expected Status (Admin or Owner):** `201 Created`
-    *   **Expected Status (Non-Owner):** `403 Forbidden`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Get User Enrollments**
     *   **Endpoint:** `/api/user/enrollments/{userId}`
     *   **Method:** `GET`
-    *   **Headers:** `Authorization: Bearer <your_jwt_token>`
+    *   **Required Role:** `ADMIN` or Owner
     *   **Expected Status (Admin or Owner):** `200 OK`
-    *   **Expected Status (Non-Owner):** `403 Forbidden`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 ---
 
@@ -125,40 +107,33 @@ Here are sample test cases for Postman to verify the role-based access control.
     *   **Endpoint:** `/api/courses`
     *   **Method:** `POST`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`
-    *   **Request Body (JSON):** A `Course` object. All fields are included. To associate instructors, include an array of `Instructor` objects with at least their `instructorId`.
+    *   **Request Body (JSON):**
         ```json
         {
-            "courseId": null, // Auto-generated on creation
             "courseName": "New Course Title",
             "courseCode": "NC001",
             "courseDescription": "A detailed description of the new course.",
-            "courseDuration": 60, // Duration in minutes/hours/etc. (adjust as per your model's unit)
+            "courseDuration": 60,
             "courseMode": "Online",
             "maxEnrollments": 100,
             "courseFee": 99.99,
             "language": "English",
             "courseCategory": "Software Development",
             "instructors": [
-                {
-                    "instructorId": 1 // Existing instructor ID
-                },
-                {
-                    "instructorId": 2 // Another existing instructor ID
-                }
+                { "instructorId": 1 }
             ]
         }
         ```
     *   **Expected Status (ADMIN/INSTRUCTOR):** `201 Created`
-    *   **Expected Status (USER/Unauthorized):** `403 Forbidden`
 
 *   **Update Course**
-    *   **Endpoint:** `/api/courses/{courseId}` (replace `{courseId}` with an existing course ID)
+    *   **Endpoint:** `/api/courses/{courseId}`
     *   **Method:** `PUT`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`
-    *   **Request Body (JSON):** A `Course` object with updated details. All fields are included. To update instructors, include the full array of `Instructor` objects with their `instructorId`s.
+    *   **Request Body (JSON):**
         ```json
         {
-            "courseId": 1, // Required for update, must match path variable
+            "courseId": 1,
             "courseName": "Updated Course Title",
             "courseCode": "UC001",
             "courseDescription": "An updated description of the course.",
@@ -169,250 +144,361 @@ Here are sample test cases for Postman to verify the role-based access control.
             "language": "Spanish",
             "courseCategory": "Web Development",
             "instructors": [
-                {
-                    "instructorId": 1 // Existing instructor ID
-                },
-                {
-                    "instructorId": 3 // Another existing instructor ID (e.g., changed from 2 to 3)
-                }
+                { "instructorId": 1 },
+                { "instructorId": 2 }
             ]
         }
         ```
     *   **Expected Status (ADMIN/INSTRUCTOR):** `200 OK`
-    *   **Expected Status (USER/Unauthorized):** `403 Forbidden`
 
 *   **Get All Courses**
     *   **Endpoint:** `/api/courses`
     *   **Method:** `GET`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`, `USER`
     *   **Expected Status (All Roles):** `200 OK`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
-*   **Get Course by ID**
-    *   **Endpoint:** `/api/courses/{courseId}` (replace `{courseId}` with an existing course ID)
+*   **Get Course by ID (Hierarchical)**
+    *   **Endpoint:** `/api/courses/{courseId}`
     *   **Method:** `GET`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`, `USER`
     *   **Expected Status (All Roles):** `200 OK`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
+    *   **Note:** The response is now hierarchical, including `modules` and `lessons`.
 
 *   **Delete Course**
-    *   **Endpoint:** `/api/courses/{courseId}` (replace `{courseId}` with an existing course ID)
+    *   **Endpoint:** `/api/courses/{courseId}`
     *   **Method:** `DELETE`
     *   **Required Role:** `ADMIN`
     *   **Expected Status (ADMIN):** `204 No Content`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
+
+*   **Create a Course Module**
+    *   **Endpoint:** `/api/courses/{courseId}/modules`
+    *   **Method:** `POST`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`
+    *   **Request Body (JSON):**
+        ```json
+        {
+            "title": "Module 1: Getting Started",
+            "description": "Introduction to the course and basic concepts.",
+            "moduleOrder": 1
+        }
+        ```
+    *   **Expected Status:** `200 OK`
+    *   **Note:** Save the `id` from the response to use in other tests (e.g., `moduleId=1`).
+
+*   **Get All Modules for a Course**
+    *   **Endpoint:** `/api/courses/{courseId}/modules`
+    *   **Method:** `GET`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`, `USER`
+    *   **Expected Status:** `200 OK`
 
 ---
 
-### 5. NotificationController Tests (`/api/notifications`)
+### 5. CourseModuleController Tests (`/api/modules`)
 
-*   **Create Notification**
-    *   **Endpoint:** `/api/notifications?userId={userId}` (replace `{userId}` with a target user ID)
-    *   **Method:** `POST`
+*   **Update Module**
+    *   **Endpoint:** `/api/modules/{moduleId}`
+    *   **Method:** `PUT`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`
-    *   **Request Body (JSON):** A `NotificationDTO` object. All fields are included.
+    *   **Request Body (JSON):**
         ```json
         {
-            "id": null, // Auto-generated on creation
+            "title": "Module 1: Updated Title",
+            "description": "Updated description.",
+            "moduleOrder": 1
+        }
+        ```
+    *   **Expected Status:** `200 OK`
+
+*   **Delete Module**
+    *   **Endpoint:** `/api/modules/{moduleId}`
+    *   **Method:** `DELETE`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`
+    *   **Expected Status:** `204 No Content`
+
+---
+
+### 6. LessonController Tests (`/api/lessons`)
+
+*   **Add a Lesson to a Module (Polymorphic)**
+    *   **Endpoint:** `/api/lessons/module/{moduleId}`
+    *   **Method:** `POST`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`
+    *   **Description:** This single endpoint handles all lesson types. The `type` field in the JSON body determines which kind of lesson is created.
+    *   **Expected Status:** `200 OK`
+
+    *   **Request Body Example (Video Lesson):**
+        ```json
+        {
+          "type": "video",
+          "title": "Lesson 1.1: Your First Application",
+          "lessonOrder": 1,
+          "video": { "id": 1 }
+        }
+        ```
+
+    *   **Request Body Example (Article Lesson):**
+        ```json
+        {
+          "type": "article",
+          "title": "Lesson 1.2: Reading Material",
+          "lessonOrder": 2,
+          "content": "<h1>Welcome</h1><p>This is the core reading for this section.</p>"
+        }
+        ```
+
+    *   **Request Body Example (Assignment Lesson):**
+        ```json
+        {
+            "type": "assignment",
+            "title": "Homework 1: Setup Your Environment",
+            "lessonOrder": 3,
+            "description": "Follow the guide to install all necessary tools.",
+            "dueDate": "2025-08-01T23:59:59",
+            "maxPoints": 100
+        }
+        ```
+    *   **Note:** Save the `id` from the assignment response for submission tests (e.g., `assignmentId=1`).
+
+    *   **Request Body Example (Quiz Lesson):**
+        ```json
+        {
+            "type": "quiz",
+            "title": "Quiz 1: Check Your Knowledge",
+            "lessonOrder": 4
+        }
+        ```
+    *   **Note:** Save the `id` from the quiz response for adding questions (e.g., `quizId=1`).
+
+---
+
+### 7. AssignmentController Tests (`/api/assignments`)
+
+*   **Submit an Assignment**
+    *   **Endpoint:** `/api/assignments/{assignmentId}/submit`
+    *   **Method:** `POST`
+    *   **Required Role:** `USER`
+    *   **Query Parameters:** `userId`
+    *   **Request Body (form-data):** `content` (text), `filePath` (optional file path)
+    *   **Expected Status:** `200 OK`
+    *   **Note:** Save the `id` from the response for grading (e.g., `submissionId=1`).
+
+*   **Get Submissions for an Assignment (Instructor View)**
+    *   **Endpoint:** `/api/assignments/{assignmentId}/submissions`
+    *   **Method:** `GET`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`
+    *   **Expected Status:** `200 OK`
+
+*   **Grade a Submission (Instructor View)**
+    *   **Endpoint:** `/api/submissions/{submissionId}/grade`
+    *   **Method:** `POST`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`
+    *   **Query Parameters:** `grade`, `feedback`
+    *   **Expected Status:** `200 OK`
+
+---
+
+### 8. QuizController Tests (`/api/quizzes`)
+
+*   **Add a Question to a Quiz**
+    *   **Endpoint:** `/api/quizzes/{quizId}/questions`
+    *   **Method:** `POST`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`
+    *   **Request Body (JSON):**
+        ```json
+        {
+            "questionText": "What is the capital of France?",
+            "answerChoices": [
+                { "choiceText": "Berlin", "isCorrect": false },
+                { "choiceText": "Madrid", "isCorrect": false },
+                { "choiceText": "Paris", "isCorrect": true },
+                { "choiceText": "Rome", "isCorrect": false }
+            ]
+        }
+        ```
+    *   **Expected Status:** `200 OK`
+
+*   **Get a Quiz**
+    *   **Endpoint:** `/api/quizzes/{quizId}`
+    *   **Method:** `GET`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`, `USER`
+    *   **Expected Status:** `200 OK`
+    *   **Expected Response:** The quiz object, populated with its `questions` and their `answerChoices`.
+
+---
+
+### 9. NotificationController Tests (`/api/notifications`)
+
+*   **Create Notification**
+    *   **Endpoint:** `/api/notifications?userId={userId}`
+    *   **Method:** `POST`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`
+    *   **Request Body (JSON):**
+        ```json
+        {
             "title": "New Notification",
             "message": "This is a test notification.",
-            "type": "SYSTEM", // Enum: SYSTEM, COURSE, ANNOUNCEMENT, etc.
-            "category": "ANNOUNCEMENT", // Enum: ANNOUNCEMENT, ALERT, REMINDER, etc.
-            "priority": "HIGH", // Enum: LOW, MEDIUM, HIGH
-            "read": false, // Default to false for new notifications
-            "createdAt": null, // Auto-generated by backend
-            "user": null // User object, typically set by backend based on userId parameter
+            "type": "SYSTEM",
+            "category": "ANNOUNCEMENT",
+            "priority": "HIGH"
         }
         ```
     *   **Expected Status (ADMIN/INSTRUCTOR):** `200 OK`
-    *   **Expected Status (USER/Unauthorized):** `403 Forbidden`
 
 *   **Get User Notifications**
-    *   **Endpoint:** `/api/notifications/user/{userId}` (replace `{userId}` with an actual user ID)
+    *   **Endpoint:** `/api/notifications/user/{userId}`
     *   **Method:** `GET`
-    *   **Required Role:** `ADMIN` (any user's notifications), `USER`/`INSTRUCTOR` (their own notifications)
-    *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - own ID):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - other ID):** `403 Forbidden`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
+    *   **Required Role:** `ADMIN` or Owner
+    *   **Expected Status (Owner or Admin):** `200 OK`
 
 *   **Mark Notification as Read**
-    *   **Endpoint:** `/api/notifications/{id}/read` (replace `{id}` with an actual notification ID)
+    *   **Endpoint:** `/api/notifications/{id}/read`
     *   **Method:** `PUT`
-    *   **Required Role:** `ADMIN` (any notification), `USER`/`INSTRUCTOR` (their own notification)
-    *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - own notification):** `200 OK`
-    *   **Expected Status (USER/INSTRUCTOR - other notification):** `403 Forbidden`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
+    *   **Required Role:** `ADMIN` or Owner
+    *   **Expected Status (Owner or Admin):** `200 OK`
 
 ---
 
-### 6. VideoController Tests (`/api/videos`)
+### 10. VideoController Tests (`/api/videos`)
 
 *   **Upload Video**
     *   **Endpoint:** `/api/videos/upload`
     *   **Method:** `POST`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`
-    *   **Request Body (form-data):**
-        *   `file`: Select a video file.
-        *   `title`: "My New Video"
-        *   `description`: "A description of the video."
+    *   **Request Body (form-data):** `file`, `title`, `description`
     *   **Expected Status (ADMIN/INSTRUCTOR):** `201 Created`
-    *   **Expected Status (USER/Unauthorized):** `403 Forbidden`
 
 *   **Get All Videos**
     *   **Endpoint:** `/api/videos`
     *   **Method:** `GET`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`, `USER`
     *   **Expected Status (All Roles):** `200 OK`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Delete Video**
-    *   **Endpoint:** `/api/videos/{id}` (replace `{id}` with an existing video ID)
+    *   **Endpoint:** `/api/videos/{id}`
     *   **Method:** `DELETE`
     *   **Required Role:** `ADMIN`
     *   **Expected Status (ADMIN):** `204 No Content`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
 
 ---
 
-### 7. CertificateController Tests (`/api/certificates`)
+### 11. CertificateController Tests (`/api/certificates`)
 
 *   **Create Certificate**
     *   **Endpoint:** `/api/certificates`
     *   **Method:** `POST`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`
-    *   **Request Body (form-data):**
-        *   `learnerId`: (ID of an existing learner)
-        *   `courseId`: (ID of an existing course)
-        *   `instructorId`: (ID of an existing instructor)
-        *   `dateOfCertificate`: "2025-07-10"
-        *   `file`: (Optional) Select a certificate file (e.g., PDF).
+    *   **Request Body (form-data):** `learnerId`, `courseId`, `instructorId`, `dateOfCertificate`, `file` (optional)
     *   **Expected Status (ADMIN/INSTRUCTOR):** `201 Created`
-    *   **Expected Status (USER/Unauthorized):** `403 Forbidden`
 
 *   **Get Certificate by ID**
-    *   **Endpoint:** `/api/certificates/{id}` (replace `{id}` with an existing certificate ID)
+    *   **Endpoint:** `/api/certificates/{id}`
     *   **Method:** `GET`
-    *   **Required Role:** `ADMIN`, `INSTRUCTOR` (any certificate), `USER` (their own certificate)
-    *   **Expected Status (ADMIN/INSTRUCTOR):** `200 OK`
-    *   **Expected Status (USER - own certificate):** `200 OK`
-    *   **Expected Status (USER - other certificate):** `403 Forbidden`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`, or Owner
+    *   **Expected Status (Owner or Admin/Instructor):** `200 OK`
 
 *   **Get All Certificates**
     *   **Endpoint:** `/api/certificates`
     *   **Method:** `GET`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`
     *   **Expected Status (ADMIN/INSTRUCTOR):** `200 OK`
-    *   **Expected Status (USER/Unauthorized):** `403 Forbidden`
 
 *   **Delete Certificate**
-    *   **Endpoint:** `/api/certificates/{id}` (replace `{id}` with an existing certificate ID)
+    *   **Endpoint:** `/api/certificates/{id}`
     *   **Method:** `DELETE`
     *   **Required Role:** `ADMIN`
     *   **Expected Status (ADMIN):** `204 No Content`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
 
 ---
 
-### 8. CheckoutController Tests (`/api/checkout`)
+### 12. CheckoutController Tests (`/api/checkout`)
 
 *   **Create Checkout Session**
     *   **Endpoint:** `/api/checkout/create-checkout-session`
     *   **Method:** `POST`
     *   **Required Role:** `USER`
-    *   **Request Body (JSON):** All fields are included.
+    *   **Request Body (JSON):**
         ```json
         {
             "tier": "premium",
             "successUrl": "http://localhost:3000/success",
             "cancelUrl": "http://localhost:3000/cancel",
-            "userId": 1, // Required: Replace with actual user ID
-            "courseId": 1, // Required: Replace with actual course ID
-            "instructorId": null // Optional: Replace with actual instructor ID if specific instructor is desired
+            "userId": 1,
+            "courseId": 1,
+            "instructorId": null
         }
         ```
-    *   **Expected Status (USER):** `200 OK` (with session URL)
-    *   **Expected Status (ADMIN/INSTRUCTOR/Unauthorized):** `403 Forbidden`
+    *   **Expected Status (USER):** `200 OK`
 
 ---
 
-### 9. InstructorController Tests (`/api/instructors`)
+### 13. InstructorController Tests (`/api/instructors`)
 
 *   **Create Instructor**
     *   **Endpoint:** `/api/instructors`
     *   **Method:** `POST`
     *   **Required Role:** `ADMIN`
-    *   **Request Body (JSON):** An `Instructor` object. All fields are included.
+    *   **Request Body (JSON):**
         ```json
         {
-            "instructorId": null, // Auto-generated on creation
             "firstName": "New",
             "lastName": "Instructor",
             "email": "new.instructor@example.com",
             "phoneNo": "123-456-7890",
-            "dateOfJoining": "2025-07-11" // Format: YYYY-MM-DD
+            "dateOfJoining": "2025-07-11"
         }
         ```
     *   **Expected Status (ADMIN):** `201 Created`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
 
 *   **Get All Instructors**
     *   **Endpoint:** `/api/instructors`
     *   **Method:** `GET`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`, `USER`
     *   **Expected Status (All Roles):** `200 OK`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Get Instructor by ID**
-    *   **Endpoint:** `/api/instructors/{instructorId}` (replace `{instructorId}` with an existing instructor ID)
+    *   **Endpoint:** `/api/instructors/{instructorId}`
     *   **Method:** `GET`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`, `USER`
     *   **Expected Status (All Roles):** `200 OK`
-    *   **Expected Status (Unauthorized):** `403 Forbidden`
 
 *   **Update Instructor**
-    *   **Endpoint:** `/api/instructors/{instructorId}` (replace `{instructorId}` with an existing instructor ID)
+    *   **Endpoint:** `/api/instructors/{instructorId}`
     *   **Method:** `PUT`
     *   **Required Role:** `ADMIN`
-    *   **Request Body (JSON):** An `Instructor` object with updated details. All fields are included.
+    *   **Request Body (JSON):**
         ```json
         {
-            "instructorId": 1, // Required for update, must match path variable
+            "instructorId": 1,
             "firstName": "Updated",
             "lastName": "Instructor",
             "email": "updated.instructor@example.com",
             "phoneNo": "098-765-4321",
-            "dateOfJoining": "2025-07-11" // Format: YYYY-MM-DD
+            "dateOfJoining": "2025-07-11"
         }
         ```
     *   **Expected Status (ADMIN):** `200 OK`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
 
 *   **Delete Instructor**
-    *   **Endpoint:** `/api/instructors/{instructorId}` (replace `{instructorId}` with an existing instructor ID)
+    *   **Endpoint:** `/api/instructors/{instructorId}`
     *   **Method:** `DELETE`
     *   **Required Role:** `ADMIN`
     *   **Expected Status (ADMIN):** `204 No Content`
-    *   **Expected Status (INSTRUCTOR/USER/Unauthorized):** `403 Forbidden`
 
 ---
 
-### 10. InvoiceController Tests (`/api/invoices`)
+### 14. InvoiceController Tests (`/api/invoices`)
 
 *   **Create Invoice**
     *   **Endpoint:** `/api/invoices`
     *   **Method:** `POST`
-    *   **Required Role:** `ADMIN`, `INSTRUCTOR` (or potentially `USER` if they can generate invoices for themselves)
-    *   **Request Body (JSON):** A `InvoiceRequest` object.
+    *   **Required Role:** `ADMIN`, `INSTRUCTOR`
+    *   **Request Body (JSON):**
         ```json
         {
             "invoiceNumber": "INV-2025-001",
             "date": "2025-07-14",
             "dueDate": "2025-08-14",
             "user": {
-                "id": null, // Optional: If existing user, provide ID. Otherwise, leave null for new user.
                 "name": "John Doe",
                 "email": "john.doe@example.com",
                 "phone": "111-222-3333",
@@ -424,36 +510,18 @@ Here are sample test cases for Postman to verify the role-based access control.
                     "quantity": 1,
                     "unitPrice": 500.00,
                     "total": 500.00
-                },
-                {
-                    "description": "E-book: Spring Boot Microservices",
-                    "quantity": 1,
-                    "unitPrice": 50.00,
-                    "total": 50.00
                 }
             ],
-            "subtotal": 550.00,
-            "taxRate": 0.085,
-            "taxAmount": 46.75,
+            "subtotal": 500.00,
+            "taxRate": 0.08,
+            "taxAmount": 40.00,
             "discount": 0.00,
-            "total": 596.75,
+            "total": 540.00,
             "status": "DRAFT",
             "notes": "Thank you for your business!"
         }
         ```
-    *   **Expected Response Body (JSON):** A JSON object containing the saved `invoice` and the `stripeInvoiceUrl`.
-        ```json
-        {
-            "invoice": {
-                "id": 1,
-                "invoiceNumber": "INV-2025-001",
-                // ... other invoice fields
-            },
-            "stripeInvoiceUrl": "https://invoice.stripe.com/i/..."
-        }
-        ```
     *   **Expected Status (ADMIN/INSTRUCTOR):** `201 Created`
-    *   **Expected Status (USER/Unauthorized):** `403 Forbidden` (assuming only ADMIN/INSTRUCTOR can create invoices)
 
 ---
 
