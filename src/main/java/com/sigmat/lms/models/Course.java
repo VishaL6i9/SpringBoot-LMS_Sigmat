@@ -1,8 +1,10 @@
 package com.sigmat.lms.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
 import java.util.Set;
 
 @Setter
@@ -34,4 +36,7 @@ public class Course {
     )
     private Set<Instructor> instructors;
 
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<CourseModule> modules;
 }
