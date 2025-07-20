@@ -1,5 +1,6 @@
 package com.sigmat.lms.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -14,5 +15,6 @@ public class VideoLesson extends Lesson {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "video_id")
+    @JsonIgnore
     private Video video;
 }
