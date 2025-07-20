@@ -40,4 +40,8 @@ public class QuizService {
         return quizRepository.findById(quizId)
                 .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with id: " + quizId));
     }
+
+    public void deleteQuestion(Long questionId) {
+        questionRepository.deleteById(questionId);
+    }
 }

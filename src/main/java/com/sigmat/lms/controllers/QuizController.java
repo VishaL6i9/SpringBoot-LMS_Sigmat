@@ -28,4 +28,10 @@ public class QuizController {
     public ResponseEntity<Question> addQuestionToQuiz(@PathVariable Long quizId, @RequestBody Question question) {
         return ResponseEntity.ok(quizService.addQuestionToQuiz(quizId, question));
     }
+
+    @DeleteMapping("/questions/{questionId}")
+    public ResponseEntity<Void> deleteQuestion(@PathVariable Long questionId) {
+        quizService.deleteQuestion(questionId);
+        return ResponseEntity.noContent().build();
+    }
 }
