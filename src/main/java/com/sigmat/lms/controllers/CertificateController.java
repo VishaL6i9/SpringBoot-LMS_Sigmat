@@ -70,7 +70,7 @@ public class CertificateController {
 
         try { 
             Learner learner = learnerService.getLearnerById(learnerId).orElseThrow(() -> new EntityNotFoundException("Learner not found"));
-            Course course = courseService.getCourseById(courseId).orElseThrow(() -> new EntityNotFoundException("Course not found"));
+            Course course = courseRepo.findById(courseId).orElseThrow(() -> new EntityNotFoundException("Course not found"));
             Instructor instructor = instructorService.getInstructorById(instructorId).orElseThrow(() -> new EntityNotFoundException("Instructor not found"));
 
             Certificate.CertificateBuilder builder = Certificate.builder()
