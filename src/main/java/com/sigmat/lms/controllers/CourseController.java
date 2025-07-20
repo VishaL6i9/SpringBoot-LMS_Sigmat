@@ -1,6 +1,7 @@
 package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.models.Course;
+import com.sigmat.lms.models.CourseDTO;
 import com.sigmat.lms.services.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,15 +25,15 @@ public class CourseController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
-    public ResponseEntity<Course> createCourse(@RequestBody Course course) {
-        Course savedCourse = courseService.saveCourse(course);
+    public ResponseEntity<CourseDTO> createCourse(@RequestBody Course course) {
+        CourseDTO savedCourse = courseService.saveCourse(course);
         return new ResponseEntity<>(savedCourse, HttpStatus.CREATED);
     }
 
     @PutMapping("/{courseId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
-    public ResponseEntity<Course> updateCourse(@PathVariable Long courseId, @RequestBody Course courseDetails) {
-        Course updatedCourse = courseService.updateCourse(courseId, courseDetails);
+    public ResponseEntity<CourseDTO> updateCourse(@PathVariable Long courseId, @RequestBody Course courseDetails) {
+        CourseDTO updatedCourse = courseService.updateCourse(courseId, courseDetails);
 
         if (updatedCourse != null) {
             return new ResponseEntity<>(updatedCourse, HttpStatus.OK);
@@ -43,15 +44,15 @@ public class CourseController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
-    public ResponseEntity<List<Course>> getAllCourses() {
-        List<Course> courses = courseService.getAllCourses();
+    public ResponseEntity<List<CourseDTO>> getAllCourses() {
+        List<CourseDTO> courses = courseService.getAllCoursesAsDTOs();
         return new ResponseEntity<>(courses, HttpStatus.OK);
     }
 
     @GetMapping("/{courseId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
-    public ResponseEntity<Course> getCourseById(@PathVariable Long courseId) {
-        Optional<Course> course = courseService.getCourseById(courseId);
+    public ResponseEntity<CourseDTO> getCourseById(@PathVariable Long courseId) {
+        Optional<CourseDTO> course = courseService.getCourseById(courseId);
         return course.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }

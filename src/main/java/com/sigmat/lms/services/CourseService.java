@@ -1,6 +1,7 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.Course;
+import com.sigmat.lms.models.CourseDTO;
 import com.sigmat.lms.models.Instructor;
 import com.sigmat.lms.repo.CourseRepo;
 import com.sigmat.lms.repo.InstructorRepo;
@@ -12,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class CourseService {
@@ -25,8 +27,25 @@ public class CourseService {
         this.instructorRepo = instructorRepo;
     }
 
-    public List<Course> getAllCourses() {
-        return courseRepo.findAll();
+    
+
+    public List<CourseDTO> getAllCoursesAsDTOs() {
+        return courseRepo.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    private CourseDTO convertToDTO(Course course) {
+        return new CourseDTO(
+                course.getCourseId(),
+                course.getCourseName(),
+                course.getCourseCode(),
+                course.getCourseDescription(),
+                course.getCourseDuration(),
+                course.getCourseMode(),
+                course.getMaxEnrollments(),
+                course.getCourseFee(),
+                course.getLanguage(),
+                course.getCourseCategory()
+        );
     }
 
     public Optional<Long> getCourseIdByCode(String courseCode) {
@@ -35,7 +54,7 @@ public class CourseService {
     }
     
     @Transactional // Ensure transactional behavior
-    public Course saveCourse(Course course) {
+    public CourseDTO saveCourse(Course course) {
         Set<Instructor> managedInstructors = new HashSet<>();
         if (course.getInstructors() != null) {
             for (Instructor instructor : course.getInstructors()) {
@@ -50,13 +69,13 @@ public class CourseService {
             }
         }
         course.setInstructors(managedInstructors);
-        return courseRepo.save(course);
+        return convertToDTO(courseRepo.save(course));
     }
 
     @Transactional // Ensure transactional behavior
-    public Course updateCourse(Long courseId, Course courseDetails) {
+    public CourseDTO updateCourse(Long courseId, Course courseDetails) {
 
-        Optional<Course> existingCourseOptional = getCourseById(courseId);
+        Optional<Course> existingCourseOptional = courseRepo.findByCourseId(courseId);
         
         if (existingCourseOptional.isPresent()) {
 
@@ -87,7 +106,7 @@ public class CourseService {
             }
             existingCourse.setInstructors(managedInstructors);
             
-            return courseRepo.save(existingCourse);
+            return convertToDTO(courseRepo.save(existingCourse));
 
         } else {
             return null;
@@ -99,8 +118,10 @@ public class CourseService {
         courseRepo.deleteById(courseId);
     }
 
-    public Optional<Course> getCourseById(Long courseId) {
-        return courseRepo.findByCourseId(courseId);
+    public Optional<CourseDTO> getCourseById(Long courseId) {
+        return courseRepo.findByCourseId(courseId).map(this::convertToDTO);
     }
+
+    
 
 }
