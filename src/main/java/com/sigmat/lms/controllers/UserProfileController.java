@@ -1,5 +1,6 @@
 package com.sigmat.lms.controllers;
 
+import com.sigmat.lms.dtos.EnrollmentDTO;
 import com.sigmat.lms.models.*;
 import com.sigmat.lms.repo.ProfileImageRepo;
 import com.sigmat.lms.repo.UserRepo;
@@ -170,11 +171,11 @@ public class UserProfileController {
 
     // New endpoint to get all enrollments for a user
     @GetMapping("/enrollments/{userId}")
-    public ResponseEntity<List<Enrollment>> getUserEnrollments(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<List<EnrollmentDTO>> getUserEnrollments(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
         if (!isAuthorized(token, userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        List<Enrollment> enrollments = enrollmentService.getEnrollmentsByUserId(userId);
+        List<EnrollmentDTO> enrollments = enrollmentService.getEnrollmentsByUserId(userId);
         return ResponseEntity.ok(enrollments);
     }
 }

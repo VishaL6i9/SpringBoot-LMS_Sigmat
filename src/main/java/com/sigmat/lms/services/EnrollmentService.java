@@ -1,5 +1,6 @@
 package com.sigmat.lms.services;
 
+import com.sigmat.lms.dtos.EnrollmentDTO;
 import com.sigmat.lms.models.Course;
 import com.sigmat.lms.models.Enrollment;
 import com.sigmat.lms.models.Instructor;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class EnrollmentService {
@@ -63,8 +65,35 @@ public class EnrollmentService {
         return enrollmentRepo.save(enrollment);
     }
 
-    public List<Enrollment> getEnrollmentsByUserId(Long userId) {
-        return enrollmentRepo.findByUser_Id(userId);
+    @Transactional(readOnly = true)
+    public List<EnrollmentDTO> getEnrollmentsByUserId(Long userId) {
+        List<Enrollment> enrollments = enrollmentRepo.findByUser_Id(userId);
+        return enrollments.stream()
+                .map(this::convertToEnrollmentDTO)
+                .collect(Collectors.toList());
+    }
+
+    private EnrollmentDTO convertToEnrollmentDTO(Enrollment enrollment) {
+        EnrollmentDTO dto = new EnrollmentDTO();
+        dto.setId(enrollment.getId());
+        dto.setEnrollmentDate(enrollment.getEnrollmentDate());
+
+        if (enrollment.getUser() != null) {
+            dto.setUserId(enrollment.getUser().getId());
+            dto.setUsername(enrollment.getUser().getUsername());
+        }
+
+        if (enrollment.getCourse() != null) {
+            dto.setCourseId(enrollment.getCourse().getCourseId());
+            dto.setCourseName(enrollment.getCourse().getCourseName());
+            // No modules or lessons here, as per the EnrollmentDTO design
+        }
+
+        if (enrollment.getInstructor() != null) {
+            dto.setInstructorId(enrollment.getInstructor().getInstructorId());
+            dto.setInstructorName(enrollment.getInstructor().getFirstName() + " " + enrollment.getInstructor().getLastName());
+        }
+        return dto;
     }
 
     public List<Enrollment> getEnrollmentsByCourseId(Long courseId) {
