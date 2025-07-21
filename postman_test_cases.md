@@ -223,18 +223,13 @@ Here are sample test cases for Postman to verify the role-based access control a
         ```json
         {
             "id": 1,
-            "enrollmentDate": "2025-07-20T12:00:00",
-            "completionDate": null,
-            "status": "ENROLLED",
-            "learner": {
-                "learnerId": 1
-            },
-            "course": {
-                "courseId": 1
-            },
-            "instructor": {
-                "instructorId": 1
-            }
+            "userId": 1,
+            "username": "testuser",
+            "courseId": 1,
+            "courseName": "Sample Course",
+            "instructorId": 1,
+            "instructorName": "John Doe",
+            "enrollmentDate": "2025-07-20"
         }
         ```
 
@@ -248,18 +243,13 @@ Here are sample test cases for Postman to verify the role-based access control a
         [
             {
                 "id": 1,
-                "enrollmentDate": "2025-07-20T12:00:00",
-                "completionDate": null,
-                "status": "ENROLLED",
-                "learner": {
-                    "learnerId": 1
-                },
-                "course": {
-                    "courseId": 1
-                },
-                "instructor": {
-                    "instructorId": 1
-                }
+                "userId": 1,
+                "username": "testuser",
+                "courseId": 1,
+                "courseName": "Sample Course",
+                "instructorId": 1,
+                "instructorName": "John Doe",
+                "enrollmentDate": "2025-07-20"
             }
         ]
         ```
@@ -1089,7 +1079,7 @@ Here are sample test cases for Postman to verify the role-based access control a
     *   **Method:** `POST`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`
     *   **Request Body (form-data):**
-        *   `learnerId`: (ID of an existing learner)
+        *   `userProfileId`: (ID of an existing user profile)
         *   `courseId`: (ID of an existing course)
         *   `instructorId`: (ID of an existing instructor)
         *   `dateOfCertificate`: "2025-07-10"
@@ -1098,18 +1088,14 @@ Here are sample test cases for Postman to verify the role-based access control a
     *   **Sample Response Body (JSON):**
         ```json
         {
-            "id": 1,
-            "dateOfCertificate": "2025-07-10",
-            "certificate": "base64encodedpdfdata...",
-            "learner": {
-                "learnerId": 1
-            },
-            "course": {
-                "courseId": 1
-            },
-            "instructor": {
-                "instructorId": 1
-            }
+            "certificateId": 1,
+            "userProfileId": 1,
+            "userProfileFirstName": "John",
+            "courseId": 1,
+            "courseName": "Sample Course",
+            "instructorId": 1,
+            "instructorFirstName": "Jane",
+            "dateOfCertificate": "2025-07-10"
         }
         ```
 
@@ -1121,18 +1107,14 @@ Here are sample test cases for Postman to verify the role-based access control a
     *   **Sample Response Body (JSON):**
         ```json
         {
-            "id": 1,
-            "dateOfCertificate": "2025-07-10",
-            "certificate": "base64encodedpdfdata...",
-            "learner": {
-                "learnerId": 1
-            },
-            "course": {
-                "courseId": 1
-            },
-            "instructor": {
-                "instructorId": 1
-            }
+            "certificateId": 1,
+            "userProfileId": 1,
+            "userProfileFirstName": "John",
+            "courseId": 1,
+            "courseName": "Sample Course",
+            "instructorId": 1,
+            "instructorFirstName": "Jane",
+            "dateOfCertificate": "2025-07-10"
         }
         ```
 
@@ -1145,18 +1127,14 @@ Here are sample test cases for Postman to verify the role-based access control a
         ```json
         [
             {
-                "id": 1,
-                "dateOfCertificate": "2025-07-10",
-                "certificate": "base64encodedpdfdata...",
-                "learner": {
-                    "learnerId": 1
-                },
-                "course": {
-                    "courseId": 1
-                },
-                "instructor": {
-                    "instructorId": 1
-                }
+                "certificateId": 1,
+                "userProfileId": 1,
+                "userProfileFirstName": "John",
+                "courseId": 1,
+                "courseName": "Sample Course",
+                "instructorId": 1,
+                "instructorFirstName": "Jane",
+                "dateOfCertificate": "2025-07-10"
             }
         ]
         ```
@@ -1166,24 +1144,20 @@ Here are sample test cases for Postman to verify the role-based access control a
     *   **Method:** `PUT`
     *   **Required Role:** `ADMIN`, `INSTRUCTOR`
     *   **Request Body (form-data):**
-        *   `certificate`: JSON part for `Certificate` object (e.g., `{"learner":{"learnerId":1},"course":{"courseId":1},"instructor":{"instructorId":1},"dateOfCertificate":"2025-07-15"}`)
+        *   `certificate`: JSON part for `Certificate` object (e.g., `{"userProfile":{"id":1},"course":{"courseId":1},"instructor":{"instructorId":1},"dateOfCertificate":"2025-07-15"}`)
         *   `file`: (Optional) Select a new certificate file.
     *   **Expected Status (ADMIN/INSTRUCTOR):** `200 OK`
     *   **Sample Response Body (JSON):**
         ```json
         {
-            "id": 1,
-            "dateOfCertificate": "2025-07-15",
-            "certificate": "newbase64encodedpdfdata...",
-            "learner": {
-                "learnerId": 1
-            },
-            "course": {
-                "courseId": 1
-            },
-            "instructor": {
-                "instructorId": 1
-            }
+            "certificateId": 1,
+            "userProfileId": 1,
+            "userProfileFirstName": "John",
+            "courseId": 1,
+            "courseName": "Sample Course",
+            "instructorId": 1,
+            "instructorFirstName": "Jane",
+            "dateOfCertificate": "2025-07-15"
         }
         ```
 
