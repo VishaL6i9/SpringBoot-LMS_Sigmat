@@ -1,5 +1,8 @@
-package com.sigmat.lms.models;
+package com.sigmat.lms.dtos;
 
+import com.sigmat.lms.models.NotificationCategory;
+import com.sigmat.lms.models.NotificationPriority;
+import com.sigmat.lms.models.NotificationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

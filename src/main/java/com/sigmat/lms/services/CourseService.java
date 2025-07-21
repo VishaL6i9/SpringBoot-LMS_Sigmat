@@ -1,7 +1,7 @@
 package com.sigmat.lms.services;
 
+import com.sigmat.lms.dtos.CourseDTO;
 import com.sigmat.lms.models.Course;
-import com.sigmat.lms.models.CourseDTO;
 import com.sigmat.lms.models.Instructor;
 import com.sigmat.lms.repo.CourseRepo;
 import com.sigmat.lms.repo.InstructorRepo;

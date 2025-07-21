@@ -2,7 +2,7 @@ package com.sigmat.lms.services;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
-import com.sigmat.lms.models.Enrollment;
+import com.sigmat.lms.dtos.EnrollmentDTO;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.models.Users;
@@ -106,7 +106,7 @@ public class UserService {
         }
 
         // Delete associated enrollments first
-        List<Enrollment> enrollments = enrollmentService.getEnrollmentsByUserId(user.getId());
+        List<EnrollmentDTO> enrollments = enrollmentService.getEnrollmentsByUserId(user.getId());
         enrollments.forEach(enrollment -> enrollmentService.deleteEnrollment(enrollment.getId()));
 
         UserProfile userProfile = userProfileRepository.findByUsers(user);
@@ -248,7 +248,7 @@ public class UserService {
         }
     }
 
-    public List<Enrollment> getUserEnrollments(Long userId) {
+    public List<EnrollmentDTO> getUserEnrollments(Long userId) {
         return enrollmentService.getEnrollmentsByUserId(userId);
     }
 }

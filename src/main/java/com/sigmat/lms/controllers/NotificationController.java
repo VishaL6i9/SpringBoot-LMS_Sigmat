@@ -1,7 +1,7 @@
 package com.sigmat.lms.controllers;
 
-import com.sigmat.lms.models.NotificationDTO;
-import com.sigmat.lms.models.NotificationStatsDTO;
+import com.sigmat.lms.dtos.NotificationDTO;
+import com.sigmat.lms.dtos.NotificationStatsDTO;
 import com.sigmat.lms.services.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

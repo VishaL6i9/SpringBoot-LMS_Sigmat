@@ -1,7 +1,7 @@
 package com.sigmat.lms.controllers;
 
+import com.sigmat.lms.dtos.CourseDTO;
 import com.sigmat.lms.models.Course;
-import com.sigmat.lms.models.CourseDTO;
 import com.sigmat.lms.services.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

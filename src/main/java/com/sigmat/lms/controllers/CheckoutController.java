@@ -1,6 +1,6 @@
 package com.sigmat.lms.controllers;
 
-import com.sigmat.lms.models.CheckoutSessionDTO;
+import com.sigmat.lms.dtos.CheckoutSessionDTO;
 import com.sigmat.lms.services.EnrollmentService;
 import com.sigmat.lms.services.StripeService;
 import org.springframework.beans.factory.annotation.Autowired;

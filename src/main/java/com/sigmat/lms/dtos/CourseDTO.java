@@ -1,4 +1,4 @@
-package com.sigmat.lms.models;
+package com.sigmat.lms.dtos;
 
 import lombok.Data;
 
