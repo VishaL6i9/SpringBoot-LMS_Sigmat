@@ -1,6 +1,6 @@
 package com.sigmat.lms.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.persistence.*;
@@ -28,7 +28,7 @@ public abstract class Lesson {
     private String title;
     private Integer lessonOrder;
     
-    @JsonIgnore
+    @JsonBackReference("courseModuleLessons")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", nullable = false)
     private CourseModule courseModule;

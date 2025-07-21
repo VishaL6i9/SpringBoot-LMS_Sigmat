@@ -1,6 +1,5 @@
 package com.sigmat.lms.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -29,7 +28,7 @@ public class CourseModule {
     private Course course;
 
     @OneToMany(mappedBy = "courseModule", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @JsonManagedReference("courseModuleLessons")
     private List<Lesson> lessons;
 }
 
