@@ -1,14 +1,12 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.exceptions.ResourceNotFoundException;
-import com.sigmat.lms.models.ArticleLesson;
 import com.sigmat.lms.models.Course;
 import com.sigmat.lms.models.CourseModule;
 import com.sigmat.lms.repo.CourseRepo;
 import com.sigmat.lms.repository.CourseModuleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,21 +25,8 @@ public class CourseModuleService {
         return courseModuleRepository.save(module);
     }
 
-    @Transactional
     public List<CourseModule> getModulesForCourse(Long courseId) {
-        Course course = courseRepository.findByCourseIdWithModulesAndLessonsAndArticleContent(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
-
-        // Explicitly initialize lazy collections and LOBs within the transaction
-        course.getModules().forEach(module -> {
-            module.getLessons().forEach(lesson -> {
-                if (lesson instanceof ArticleLesson) {
-                    // Access the content to initialize the LOB
-                    ((ArticleLesson) lesson).getContent();
-                }
-            });
-        });
-        return course.getModules();
+        return courseRepository.findById(courseId).map(Course::getModules).orElseThrow(() -> new ResourceNotFoundException("Course not found"));
     }
 
     public CourseModule updateModule(Long moduleId, CourseModule moduleDetails) {
