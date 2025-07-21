@@ -18,8 +18,8 @@ public class Certificate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long certificateId;
     @ManyToOne
-    @JoinColumn(name = "learner_id",referencedColumnName = "learner_id")
-    private Learner learner;
+    @JoinColumn(name = "user_profile_id", referencedColumnName = "id")
+    private UserProfile userProfile;
     @ManyToOne
     @JoinColumn(name = "courseId",referencedColumnName = "courseId")
     private Course course;

@@ -1,4 +1,4 @@
-package com.sigmat.lms.models;
+package com.sigmat.lms.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,8 +11,8 @@ import java.time.LocalDate;
 @NoArgsConstructor 
 public class CertificateDTO {
     private Long certificateId;
-    private Long learnerId;
-    private String learnerFirstName;
+    private Long userProfileId;
+    private String userProfileFirstName;
     private Long courseId;
     private String courseName;
     private Long instructorId;

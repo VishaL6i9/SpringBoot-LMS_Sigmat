@@ -1,12 +1,16 @@
 package com.sigmat.lms.controllers;
 
-import com.sigmat.lms.models.*;
+import com.sigmat.lms.dtos.CertificateDTO;
+import com.sigmat.lms.models.Certificate;
+import com.sigmat.lms.models.Course;
+import com.sigmat.lms.models.Instructor;
+import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.repo.CertificateRepo;
 import com.sigmat.lms.repo.CourseRepo;
 import com.sigmat.lms.services.CertificateService;
 import com.sigmat.lms.services.CourseService;
 import com.sigmat.lms.services.InstructorService;
-import com.sigmat.lms.services.LearnerService;
+import com.sigmat.lms.services.UserProfileService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -33,14 +37,14 @@ public class CertificateController {
     @Autowired
     private InstructorService instructorService;
     @Autowired
-    private LearnerService learnerService;
+    private UserProfileService userProfileService; // Changed from LearnerService
     @Autowired
     private CourseService courseService;
     @Autowired
     private CourseRepo courseRepo;
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR') or (@certificateService.getCertificate(#id).learner.user.id == authentication.principal.id)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR') or (@certificateService.getCertificate(#id).userProfile.users.id == authentication.principal.id)")
     public ResponseEntity<CertificateDTO> getCertificate(@PathVariable Long id) {
         Optional<CertificateDTO> certificateDTO = certificateService.getCertificateDtoById(id); 
 
@@ -57,24 +61,24 @@ public class CertificateController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Certificate> createCertificate(
-            @RequestParam("learnerId") Long learnerId,
+            @RequestParam("userProfileId") Long userProfileId,
             @RequestParam("courseId") Long courseId,
             @RequestParam("instructorId") Long instructorId,
             @RequestParam("dateOfCertificate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateOfCertificate,
             @RequestParam(value = "file", required = false) MultipartFile file
     ) throws IOException {
 
-        if (learnerId == null || courseId == null || instructorId == null || dateOfCertificate == null) {
+        if (userProfileId == null || courseId == null || instructorId == null || dateOfCertificate == null) {
             return ResponseEntity.badRequest().build(); 
         }
 
         try { 
-            Learner learner = learnerService.getLearnerById(learnerId).orElseThrow(() -> new EntityNotFoundException("Learner not found"));
+            UserProfile userProfile = userProfileService.getUserProfile(userProfileId);
             Course course = courseRepo.findById(courseId).orElseThrow(() -> new EntityNotFoundException("Course not found"));
             Instructor instructor = instructorService.getInstructorById(instructorId).orElseThrow(() -> new EntityNotFoundException("Instructor not found"));
 
             Certificate.CertificateBuilder builder = Certificate.builder()
-                    .learner(learner)
+                    .userProfile(userProfile)
                     .course(course)
                     .instructor(instructor)
                     .dateOfCertificate(dateOfCertificate);
@@ -108,7 +112,7 @@ public class CertificateController {
             return ResponseEntity.notFound().build();
         }
     
-        certificate.setLearner(updatedCertificate.getLearner());
+        certificate.setUserProfile(updatedCertificate.getUserProfile());
         certificate.setCourse(updatedCertificate.getCourse());
         certificate.setInstructor(updatedCertificate.getInstructor());
         certificate.setDateOfCertificate(updatedCertificate.getDateOfCertificate());
