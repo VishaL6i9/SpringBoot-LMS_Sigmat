@@ -157,27 +157,50 @@ Here are sample test cases for Postman to verify the role-based access control a
         ```
 
 *   **Update User Profile**
-    *   **Endpoint:** `/api/user/profile`
+    *   **Endpoint:** `/api/user/profile/{userId}`
     *   **Method:** `PUT`
     *   **Required Role:** `ADMIN` or Owner
     *   **Request Body (JSON):**
         ```json
         {
-            "id": 1, 
             "firstName": "UpdatedFirstName",
             "lastName": "UpdatedLastName",
             "email": "updated.email@example.com",
             "phone": "123-456-7890",
             "timezone": "UTC",
             "language": "en",
-            "address": "456 New St",
-            "profileImage": null,
-            "users": {
-                "id": 1 
-            }
+            "address": "456 New St"
         }
         ```
     *   **Expected Status (Admin or Owner):** `200 OK`
+
+*   **Request Password Reset**
+    *   **Endpoint:** `/api/public/password-reset/request`
+    *   **Method:** `POST`
+    *   **Required Role:** None (public)
+    *   **Request Body (JSON):**
+        ```json
+        {
+            "email": "user@example.com"
+        }
+        ```
+    *   **Expected Status:** `200 OK`
+    *   **Expected Response Body:** `"Password reset email sent."`
+
+*   **Reset Password**
+    *   **Endpoint:** `/api/public/password-reset/reset`
+    *   **Method:** `POST`
+    *   **Required Role:** None (public)
+    *   **Request Body (JSON):**
+        ```json
+        {
+            "email": "user@example.com",
+            "token": "the-token-from-the-email",
+            "newPassword": "yourNewSecurePassword"
+        }
+        ```
+    *   **Expected Status:** `200 OK`
+    *   **Expected Response Body:** `"Password reset successful."`
 
 *   **Update User Password**
     *   **Endpoint:** `/api/user/profile/password?userID={userID}&newPassword={newPassword}`
