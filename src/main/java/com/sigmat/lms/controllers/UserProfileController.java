@@ -1,6 +1,7 @@
 package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.dtos.EnrollmentDTO;
+import com.sigmat.lms.dtos.UserSubscriptionDTO;
 import com.sigmat.lms.models.*;
 import com.sigmat.lms.repo.ProfileImageRepo;
 import com.sigmat.lms.repo.UserRepo;
@@ -25,14 +26,16 @@ public class UserProfileController {
     private final UserRepo userRepo;
     private final EnrollmentService enrollmentService;
     private final UserService userService;
+    private final SubscriptionService subscriptionService;
 
     @Autowired
-    public UserProfileController(JwtService jwtService, UserProfileService userProfileService, UserRepo userRepo, ProfileImageRepo profileImageRepo, ProfileImageService profileImageService, EnrollmentService enrollmentService, UserService userService) {
+    public UserProfileController(JwtService jwtService, UserProfileService userProfileService, UserRepo userRepo, ProfileImageRepo profileImageRepo, ProfileImageService profileImageService, EnrollmentService enrollmentService, UserService userService, SubscriptionService subscriptionService) {
         this.jwtService = jwtService;
         this.userProfileService = userProfileService;
         this.userRepo = userRepo;
         this.enrollmentService = enrollmentService;
         this.userService = userService;
+        this.subscriptionService = subscriptionService;
     }
 
     private boolean isAuthorized(String token, Long resourceUserId) {
@@ -177,5 +180,28 @@ public class UserProfileController {
         }
         List<EnrollmentDTO> enrollments = enrollmentService.getEnrollmentsByUserId(userId);
         return ResponseEntity.ok(enrollments);
+    }
+
+    // Get user's current subscription
+    @GetMapping("/subscription/{userId}")
+    public ResponseEntity<UserSubscriptionDTO> getUserCurrentSubscription(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        UserSubscriptionDTO subscription = subscriptionService.getCurrentSubscription(userId);
+        if (subscription != null) {
+            return ResponseEntity.ok(subscription);
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    // Get all user's subscriptions
+    @GetMapping("/subscriptions/{userId}")
+    public ResponseEntity<List<UserSubscriptionDTO>> getUserSubscriptions(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        List<UserSubscriptionDTO> subscriptions = subscriptionService.getUserSubscriptions(userId);
+        return ResponseEntity.ok(subscriptions);
     }
 }

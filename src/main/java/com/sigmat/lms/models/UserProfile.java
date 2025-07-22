@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -32,4 +34,18 @@ public class UserProfile {
     private ProfileImage profileImage; 
 
     private String password;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<UserSubscription> subscriptions;
+
+    // Helper method to get current active subscription
+    public UserSubscription getCurrentSubscription() {
+        if (subscriptions == null || subscriptions.isEmpty()) {
+            return null;
+        }
+        return subscriptions.stream()
+                .filter(sub -> sub.getStatus() == SubscriptionStatus.ACTIVE)
+                .findFirst()
+                .orElse(null);
+    }
 }
