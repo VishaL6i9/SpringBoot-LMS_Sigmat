@@ -35,15 +35,12 @@ public class UserProfile {
 
     private String password;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<UserSubscription> subscriptions;
-
-    // Helper method to get current active subscription
+    // Helper method to get current active subscription through the Users entity
     public UserSubscription getCurrentSubscription() {
-        if (subscriptions == null || subscriptions.isEmpty()) {
+        if (users == null || users.getSubscriptions() == null || users.getSubscriptions().isEmpty()) {
             return null;
         }
-        return subscriptions.stream()
+        return users.getSubscriptions().stream()
                 .filter(sub -> sub.getStatus() == SubscriptionStatus.ACTIVE)
                 .findFirst()
                 .orElse(null);

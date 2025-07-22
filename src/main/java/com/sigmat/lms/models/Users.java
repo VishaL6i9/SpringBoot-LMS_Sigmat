@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -56,6 +57,9 @@ public class Users {
 
     @Column(name = "password_reset_token_expiration")
     private Long passwordResetTokenExpiration;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<UserSubscription> subscriptions;
 
     @PrePersist
     public void prePersist() {
