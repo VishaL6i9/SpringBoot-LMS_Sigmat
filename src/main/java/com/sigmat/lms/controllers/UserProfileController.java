@@ -59,12 +59,12 @@ public class UserProfileController {
     }
 
     //Update User Profile
-    @PutMapping("/profile")
-    public ResponseEntity<UserProfile> updateUserProfile(@RequestBody UserProfile userProfile, @RequestHeader("Authorization") String token) {
-        if (!isAuthorized(token, userProfile.getUsers().getId())) {
+    @PutMapping("/profile/{userId}")
+    public ResponseEntity<UserProfile> updateUserProfile(@PathVariable Long userId, @RequestBody UserProfile userProfile, @RequestHeader("Authorization") String token) {
+        if (!isAuthorized(token, userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        UserProfile updatedProfile = userProfileService.updateUserProfile(userProfile);
+        UserProfile updatedProfile = userProfileService.updateUserProfile(userId, userProfile);
         return ResponseEntity.ok(updatedProfile);
     }
 

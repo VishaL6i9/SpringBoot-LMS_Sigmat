@@ -34,12 +34,12 @@ public class UserProfileService {
         return userProfileRepository.findByUsersId(userId);
     }
 
-    public UserProfile updateUserProfile(UserProfile userProfile) {
-        UserProfile existingProfile = userProfileRepository.findByUsersId(userProfile.getId());
-        Optional<Users> existingUser  = userRepo.findById(userProfile.getId());
+    public UserProfile updateUserProfile(Long userId, UserProfile userProfile) {
+        UserProfile existingProfile = userProfileRepository.findByUsersId(userId);
+        Optional<Users> existingUser  = userRepo.findById(userId);
 
-        if (existingProfile != null && existingUser .isPresent()) {
-            Users updatedUser  = existingUser .get();
+        if (existingProfile != null && existingUser.isPresent()) {
+            Users updatedUser  = existingUser.get();
 
             existingProfile.setFirstName(userProfile.getFirstName());
             existingProfile.setLastName(userProfile.getLastName());
@@ -47,18 +47,17 @@ public class UserProfileService {
             existingProfile.setPhone(userProfile.getPhone());
             existingProfile.setTimezone(userProfile.getTimezone());
             existingProfile.setLanguage(userProfile.getLanguage());
-            existingProfile.setProfileImage(userProfile.getProfileImage());
 
-            updatedUser .setFirstName(userProfile.getFirstName());
-            updatedUser .setLastName(userProfile.getLastName());
-            updatedUser .setEmail(userProfile.getEmail());
+            updatedUser.setFirstName(userProfile.getFirstName());
+            updatedUser.setLastName(userProfile.getLastName());
+            updatedUser.setEmail(userProfile.getEmail());
 
             userProfileRepository.save(existingProfile);
-            userRepo.save(updatedUser );
+            userRepo.save(updatedUser);
 
             return existingProfile;
         } else {
-            throw new RuntimeException("User  Profile not found with id: " + userProfile.getId());
+            throw new RuntimeException("User Profile not found with id: " + userId);
         }
     }
 
