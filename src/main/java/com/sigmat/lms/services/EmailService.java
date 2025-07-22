@@ -20,4 +20,12 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    public void sendPasswordResetEmail(String to, String token) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Password Reset Request");
+        message.setText("You have requested a password reset. Please use the following token to reset your password: " + token);
+        mailSender.send(message);
+    }
 }

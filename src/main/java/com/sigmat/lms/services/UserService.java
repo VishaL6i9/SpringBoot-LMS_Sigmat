@@ -251,4 +251,40 @@ public class UserService {
     public List<EnrollmentDTO> getUserEnrollments(Long userId) {
         return enrollmentService.getEnrollmentsByUserId(userId);
     }
+
+    @Transactional
+    public void requestPasswordReset(String email) {
+        Users user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new RuntimeException("User not found with email: " + email);
+        }
+
+        String token = UUID.randomUUID().toString();
+        user.setPasswordResetToken(token);
+        user.setPasswordResetTokenExpiration(System.currentTimeMillis() + 3600000); // 1 hour
+        userRepository.save(user);
+
+        emailService.sendPasswordResetEmail(email, token);
+    }
+
+    @Transactional
+    public void resetPassword(String email, String token, String newPassword) {
+        Users user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new RuntimeException("User not found with email: " + email);
+        }
+
+        if (user.getPasswordResetToken() == null || !user.getPasswordResetToken().equals(token)) {
+            throw new RuntimeException("Invalid password reset token.");
+        }
+
+        if (System.currentTimeMillis() > user.getPasswordResetTokenExpiration()) {
+            throw new RuntimeException("Password reset token has expired.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenExpiration(null);
+        userRepository.save(user);
+    }
 }

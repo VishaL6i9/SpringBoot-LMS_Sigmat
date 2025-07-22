@@ -1,5 +1,7 @@
 package com.sigmat.lms.controllers;
 
+import com.sigmat.lms.dtos.PasswordResetDTO;
+import com.sigmat.lms.dtos.PasswordResetRequestDTO;
 import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.Users;
@@ -127,5 +129,27 @@ public class AuthController {
     public String verifyEmail(@RequestParam String token) {
         boolean isVerified = userService.verifyUser(token);
         return isVerified ? "Email verified successfully!" : "Invalid or expired token.";
+    }
+
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<?> requestPasswordReset(@RequestBody PasswordResetRequestDTO request) {
+        try {
+            userService.requestPasswordReset(request.getEmail());
+            return ResponseEntity.ok().body("Password reset email sent.");
+        } catch (Exception e) {
+            LOGGER.severe("Password reset request failed: " + e.getMessage());
+            return ResponseEntity.status(400).body("Password reset request failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/password-reset/reset")
+    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetDTO request) {
+        try {
+            userService.resetPassword(request.getEmail(), request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok().body("Password reset successful.");
+        } catch (Exception e) {
+            LOGGER.severe("Password reset failed: " + e.getMessage());
+            return ResponseEntity.status(400).body("Password reset failed: " + e.getMessage());
+        }
     }
 }

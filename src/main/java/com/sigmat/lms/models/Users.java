@@ -51,6 +51,12 @@ public class Users {
     @Column(name = "is_verified", nullable = false)
     private boolean isVerified = false;
 
+    @Column(name = "password_reset_token")
+    private String passwordResetToken;
+
+    @Column(name = "password_reset_token_expiration")
+    private Long passwordResetTokenExpiration;
+
     @PrePersist
     public void prePersist() {
         if (userProfile == null) {
