@@ -1391,4 +1391,307 @@ Here are sample test cases for Postman to verify the role-based access control a
 
 ---
 
-Remember to replace placeholders like `{username}`, `{userID}`, `{courseId}`, `{id}` with actual values from your database. Good luck with your testing!
+### 17. SubscriptionController Tests (`/api/subscriptions`)
+
+*   **Get All Subscription Plans**
+    *   **Endpoint:** `/api/subscriptions/plans`
+    *   **Method:** `GET`
+    *   **Required Role:** None (public)
+    *   **Expected Status:** `200 OK`
+    *   **Sample Response Body (JSON):**
+        ```json
+        [
+            {
+                "id": 1,
+                "name": "Foundation",
+                "planType": "LEARNER",
+                "learnerTier": "FOUNDATION",
+                "facultyTier": null,
+                "priceInr": 0.00,
+                "description": "Access public course catalog, register, attend one free course, forum participation",
+                "features": [
+                    "Access public course catalog",
+                    "Register for courses",
+                    "Attend one free course",
+                    "Forum participation"
+                ],
+                "bestSuitedFor": "New users exploring the platform",
+                "active": true,
+                "minimumDurationMonths": 1,
+                "customPricing": false
+            }
+        ]
+        ```
+
+*   **Get Learner Plans**
+    *   **Endpoint:** `/api/subscriptions/plans/learner`
+    *   **Method:** `GET`
+    *   **Required Role:** None (public)
+    *   **Expected Status:** `200 OK`
+
+*   **Get Faculty Plans**
+    *   **Endpoint:** `/api/subscriptions/plans/faculty`
+    *   **Method:** `GET`
+    *   **Required Role:** None (public)
+    *   **Expected Status:** `200 OK`
+
+*   **Get Plan by ID**
+    *   **Endpoint:** `/api/subscriptions/plans/{planId}`
+    *   **Method:** `GET`
+    *   **Required Role:** None (public)
+    *   **Expected Status:** `200 OK`
+
+*   **Subscribe User to Plan**
+    *   **Endpoint:** `/api/subscriptions/users/{userId}/subscribe`
+    *   **Method:** `POST`
+    *   **Required Role:** `ADMIN` or Owner
+    *   **Request Body (JSON):**
+        ```json
+        {
+            "planId": 2,
+            "autoRenew": true,
+            "durationMonths": 3,
+            "discountApplied": 0.00,
+            "paymentReference": "stripe_payment_123"
+        }
+        ```
+    *   **Expected Status (Admin or Owner):** `200 OK`
+    *   **Sample Response Body (JSON):**
+        ```json
+        {
+            "id": 1,
+            "userId": 123,
+            "username": "john_doe",
+            "subscriptionPlan": {
+                "id": 2,
+                "name": "Essential",
+                "planType": "LEARNER",
+                "learnerTier": "ESSENTIAL",
+                "priceInr": 849.00
+            },
+            "status": "ACTIVE",
+            "startDate": "2025-01-15T10:00:00",
+            "endDate": "2025-04-15T10:00:00",
+            "autoRenew": true,
+            "actualPrice": 849.00,
+            "discountApplied": 0.00,
+            "paymentReference": "stripe_payment_123",
+            "createdAt": "2025-01-15T10:00:00",
+            "updatedAt": "2025-01-15T10:00:00"
+        }
+        ```
+
+*   **Get User Subscriptions**
+    *   **Endpoint:** `/api/subscriptions/users/{userId}`
+    *   **Method:** `GET`
+    *   **Required Role:** `ADMIN` or Owner
+    *   **Expected Status (Admin or Owner):** `200 OK`
+    *   **Sample Response Body (JSON):**
+        ```json
+        [
+            {
+                "id": 1,
+                "userId": 123,
+                "username": "john_doe",
+                "subscriptionPlan": {
+                    "id": 2,
+                    "name": "Essential",
+                    "planType": "LEARNER"
+                },
+                "status": "ACTIVE",
+                "startDate": "2025-01-15T10:00:00",
+                "endDate": "2025-04-15T10:00:00",
+                "autoRenew": true
+            }
+        ]
+        ```
+
+*   **Get Current User Subscription**
+    *   **Endpoint:** `/api/subscriptions/users/{userId}/current`
+    *   **Method:** `GET`
+    *   **Required Role:** `ADMIN` or Owner
+    *   **Expected Status (Admin or Owner):** `200 OK` or `204 No Content`
+
+*   **Cancel Subscription**
+    *   **Endpoint:** `/api/subscriptions/{subscriptionId}/cancel`
+    *   **Method:** `PUT`
+    *   **Required Role:** `ADMIN` or Subscription Owner
+    *   **Expected Status (Admin or Owner):** `200 OK`
+
+*   **Expire Subscriptions (Manual Trigger)**
+    *   **Endpoint:** `/api/subscriptions/expire-subscriptions`
+    *   **Method:** `POST`
+    *   **Required Role:** `ADMIN`
+    *   **Expected Status (ADMIN):** `200 OK`
+
+---
+
+### 18. AdminSubscriptionController Tests (`/api/admin/subscriptions`)
+
+**All endpoints in this controller require `ADMIN` role.**
+
+*   **Get All Plans (Including Inactive)**
+    *   **Endpoint:** `/api/admin/subscriptions/plans/all`
+    *   **Method:** `GET`
+    *   **Expected Status (ADMIN):** `200 OK`
+
+*   **Create Subscription Plan**
+    *   **Endpoint:** `/api/admin/subscriptions/plans`
+    *   **Method:** `POST`
+    *   **Request Body (JSON):**
+        ```json
+        {
+            "name": "Custom Plan",
+            "planType": "LEARNER",
+            "learnerTier": "PROFESSIONAL",
+            "priceInr": 2500.00,
+            "description": "Custom professional plan",
+            "features": [
+                "All professional features",
+                "Custom support"
+            ],
+            "bestSuitedFor": "Custom users",
+            "active": true,
+            "minimumDurationMonths": 6,
+            "customPricing": false
+        }
+        ```
+    *   **Expected Status (ADMIN):** `200 OK`
+
+*   **Update Subscription Plan**
+    *   **Endpoint:** `/api/admin/subscriptions/plans/{planId}`
+    *   **Method:** `PUT`
+    *   **Request Body (JSON):**
+        ```json
+        {
+            "name": "Updated Plan Name",
+            "planType": "LEARNER",
+            "learnerTier": "PROFESSIONAL",
+            "priceInr": 2800.00,
+            "description": "Updated description",
+            "features": [
+                "Updated features"
+            ],
+            "bestSuitedFor": "Updated target audience",
+            "active": true,
+            "minimumDurationMonths": 6,
+            "customPricing": false
+        }
+        ```
+    *   **Expected Status (ADMIN):** `200 OK`
+
+*   **Deactivate Subscription Plan**
+    *   **Endpoint:** `/api/admin/subscriptions/plans/{planId}`
+    *   **Method:** `DELETE`
+    *   **Expected Status (ADMIN):** `200 OK`
+
+*   **Get All User Subscriptions**
+    *   **Endpoint:** `/api/admin/subscriptions/users/all`
+    *   **Method:** `GET`
+    *   **Expected Status (ADMIN):** `200 OK`
+
+*   **Get Active User Subscriptions**
+    *   **Endpoint:** `/api/admin/subscriptions/users/active`
+    *   **Method:** `GET`
+    *   **Expected Status (ADMIN):** `200 OK`
+
+*   **Expire All Subscriptions**
+    *   **Endpoint:** `/api/admin/subscriptions/expire-all`
+    *   **Method:** `POST`
+    *   **Expected Status (ADMIN):** `200 OK`
+
+---
+
+### 19. UserProfileController Subscription Tests (`/api/user`)
+
+*   **Get User's Current Subscription**
+    *   **Endpoint:** `/api/user/subscription/{userId}`
+    *   **Method:** `GET`
+    *   **Required Role:** `ADMIN` or Owner
+    *   **Expected Status (Admin or Owner):** `200 OK` or `204 No Content`
+    *   **Sample Response Body (JSON):**
+        ```json
+        {
+            "id": 1,
+            "userId": 123,
+            "username": "john_doe",
+            "subscriptionPlan": {
+                "id": 2,
+                "name": "Essential",
+                "planType": "LEARNER",
+                "priceInr": 849.00
+            },
+            "status": "ACTIVE",
+            "startDate": "2025-01-15T10:00:00",
+            "endDate": "2025-04-15T10:00:00",
+            "autoRenew": true
+        }
+        ```
+
+*   **Get All User's Subscriptions**
+    *   **Endpoint:** `/api/user/subscriptions/{userId}`
+    *   **Method:** `GET`
+    *   **Required Role:** `ADMIN` or Owner
+    *   **Expected Status (Admin or Owner):** `200 OK`
+    *   **Sample Response Body (JSON):**
+        ```json
+        [
+            {
+                "id": 1,
+                "userId": 123,
+                "username": "john_doe",
+                "subscriptionPlan": {
+                    "id": 2,
+                    "name": "Essential",
+                    "planType": "LEARNER"
+                },
+                "status": "ACTIVE",
+                "startDate": "2025-01-15T10:00:00",
+                "endDate": "2025-04-15T10:00:00"
+            },
+            {
+                "id": 2,
+                "userId": 123,
+                "username": "john_doe",
+                "subscriptionPlan": {
+                    "id": 1,
+                    "name": "Foundation",
+                    "planType": "LEARNER"
+                },
+                "status": "EXPIRED",
+                "startDate": "2024-10-15T10:00:00",
+                "endDate": "2025-01-15T10:00:00"
+            }
+        ]
+        ```
+
+---
+
+### Testing Notes for Subscription System
+
+1. **Plan IDs:** After the application starts, the subscription plans will be automatically loaded. Use the following approximate IDs:
+   - Foundation (Learner): ID 1
+   - Essential (Learner): ID 2
+   - Professional (Learner): ID 3
+   - Mastery (Learner): ID 4
+   - Institutional (Learner): ID 5
+   - Starter (Faculty): ID 6
+   - Educator (Faculty): ID 7
+   - Mentor (Faculty): ID 8
+   - Institutional (Faculty): ID 9
+
+2. **Subscription Status:** Valid values are `ACTIVE`, `INACTIVE`, `EXPIRED`, `CANCELLED`, `PENDING`
+
+3. **Plan Types:** Valid values are `LEARNER`, `FACULTY`
+
+4. **Testing Workflow:**
+   - First, get available plans using `/api/subscriptions/plans/learner` or `/api/subscriptions/plans/faculty`
+   - Subscribe a user using `/api/subscriptions/users/{userId}/subscribe`
+   - Check subscription status using `/api/user/subscription/{userId}`
+   - Test cancellation using `/api/subscriptions/{subscriptionId}/cancel`
+
+5. **Automatic Expiration:** The system runs a scheduled task daily at 2 AM to expire subscriptions. You can manually trigger this using the admin endpoint.
+
+---
+
+Remember to replace placeholders like `{username}`, `{userID}`, `{courseId}`, `{id}`, `{userId}`, `{planId}`, `{subscriptionId}` with actual values from your database. Good luck with your testing!
