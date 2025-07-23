@@ -6,7 +6,7 @@ import com.sigmat.lms.models.AssignmentSubmission;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.repository.AssignmentRepository;
 import com.sigmat.lms.repository.AssignmentSubmissionRepository;
-import com.sigmat.lms.repository.UserRepository;
+import com.sigmat.lms.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +23,7 @@ public class AssignmentService {
     private AssignmentSubmissionRepository submissionRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserRepo userRepository;
 
     public Assignment createAssignment(Assignment assignment) {
         return assignmentRepository.save(assignment);

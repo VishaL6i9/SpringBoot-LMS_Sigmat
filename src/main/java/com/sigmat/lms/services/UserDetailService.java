@@ -3,7 +3,7 @@ package com.sigmat.lms.services;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.UserPrincipal;
 import com.sigmat.lms.models.Users;
-import com.sigmat.lms.repo.UserRepo;
+import com.sigmat.lms.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

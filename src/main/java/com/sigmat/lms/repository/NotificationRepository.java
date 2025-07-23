@@ -1,4 +1,4 @@
-package com.sigmat.lms.repo;
+package com.sigmat.lms.repository;
 
 import com.sigmat.lms.models.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;

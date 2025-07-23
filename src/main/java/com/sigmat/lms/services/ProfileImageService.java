@@ -1,7 +1,7 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.ProfileImage;
-import com.sigmat.lms.repo.ProfileImageRepo;
+import com.sigmat.lms.repository.ProfileImageRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

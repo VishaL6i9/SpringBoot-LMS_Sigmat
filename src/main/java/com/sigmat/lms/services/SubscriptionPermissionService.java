@@ -2,7 +2,7 @@ package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.*;
 import com.sigmat.lms.repository.UserSubscriptionRepository;
-import com.sigmat.lms.repo.UserRepo;
+import com.sigmat.lms.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

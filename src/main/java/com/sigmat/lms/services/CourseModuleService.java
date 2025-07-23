@@ -3,7 +3,7 @@ package com.sigmat.lms.services;
 import com.sigmat.lms.exceptions.ResourceNotFoundException;
 import com.sigmat.lms.models.Course;
 import com.sigmat.lms.models.CourseModule;
-import com.sigmat.lms.repo.CourseRepo;
+import com.sigmat.lms.repository.CourseRepo;
 import com.sigmat.lms.repository.CourseModuleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

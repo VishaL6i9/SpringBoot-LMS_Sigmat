@@ -3,6 +3,7 @@ package com.sigmat.lms.repository;
 import com.sigmat.lms.models.UserSubscription;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.models.SubscriptionStatus;
+import com.sigmat.lms.models.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,4 +29,9 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     List<UserSubscription> findExpiredActiveSubscriptions(@Param("currentDate") LocalDateTime currentDate);
     
     List<UserSubscription> findByStatus(SubscriptionStatus status);
+
+    Optional<UserSubscription> findByUserAndCourseAndStatus(Users user, Course course, SubscriptionStatus status);
+
+    @Query("SELECT us FROM UserSubscription us WHERE us.user = :user AND us.course = :course AND us.status = 'ACTIVE' AND us.endDate > :currentDate")
+    Optional<UserSubscription> findActiveSubscriptionByUserAndCourse(@Param("user") Users user, @Param("course") Course course, @Param("currentDate") LocalDateTime currentDate);
 }

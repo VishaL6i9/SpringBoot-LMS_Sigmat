@@ -5,7 +5,7 @@ import com.sigmat.lms.dtos.NotificationStatsDTO;
 import com.sigmat.lms.exceptions.ResourceNotFoundException;
 import com.sigmat.lms.models.Notification;
 import com.sigmat.lms.models.Users;
-import com.sigmat.lms.repo.NotificationRepository;
+import com.sigmat.lms.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Service;

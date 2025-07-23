@@ -1,4 +1,4 @@
-package com.sigmat.lms.repo;
+package com.sigmat.lms.repository;
 
 import com.sigmat.lms.dtos.CertificateDTO;
 import com.sigmat.lms.models.Certificate;

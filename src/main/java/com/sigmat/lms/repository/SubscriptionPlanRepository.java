@@ -22,4 +22,6 @@ public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPl
     Optional<SubscriptionPlan> findByPlanTypeAndFacultyTier(SubscriptionPlanType planType, FacultyPlanTier facultyTier);
     
     List<SubscriptionPlan> findByPlanTypeAndIsCustomPricingFalseAndIsActiveTrue(SubscriptionPlanType planType);
+
+    List<SubscriptionPlan> findByCourseIdAndIsActiveTrue(Long courseId);
 }

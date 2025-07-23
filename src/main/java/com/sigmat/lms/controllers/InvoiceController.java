@@ -2,7 +2,7 @@ package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.models.*;
 import com.sigmat.lms.repository.InvoiceRepository;
-import com.sigmat.lms.repository.UserRepository;
+import com.sigmat.lms.repository.UserRepo;
 import com.sigmat.lms.services.StripeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,7 +27,7 @@ public class InvoiceController {
     private InvoiceRepository invoiceRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserRepo userRepository;
 
     @Autowired
     private StripeService stripeService;

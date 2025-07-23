@@ -1,10 +1,10 @@
 package com.sigmat.lms.config;
 
 import com.sigmat.lms.models.*;
-import com.sigmat.lms.repo.CourseRepo;
-import com.sigmat.lms.repo.InstructorRepo;
-import com.sigmat.lms.repo.UserRepo;
-import com.sigmat.lms.repo.VideoRepo;
+import com.sigmat.lms.repository.CourseRepo;
+import com.sigmat.lms.repository.InstructorRepo;
+import com.sigmat.lms.repository.UserRepo;
+import com.sigmat.lms.repository.VideoRepo;
 import com.sigmat.lms.services.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;

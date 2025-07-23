@@ -1,7 +1,7 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.Video;
-import com.sigmat.lms.repo.VideoRepo;
+import com.sigmat.lms.repository.VideoRepo;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

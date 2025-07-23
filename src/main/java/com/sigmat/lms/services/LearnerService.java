@@ -1,7 +1,7 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.Learner;
-import com.sigmat.lms.repo.LearnerRepo;
+import com.sigmat.lms.repository.LearnerRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

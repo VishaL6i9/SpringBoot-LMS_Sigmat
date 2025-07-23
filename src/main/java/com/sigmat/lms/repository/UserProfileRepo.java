@@ -1,4 +1,4 @@
-package com.sigmat.lms.repo;
+package com.sigmat.lms.repository;
 
 import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.models.Users;
