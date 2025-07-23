@@ -49,7 +49,7 @@ public class StripeService {
                                 .setQuantity(1L)
                                 .setPriceData(
                                         SessionCreateParams.LineItem.PriceData.builder()
-                                                .setCurrency("usd")
+                                                .setCurrency("inr")
                                                 .setProductData(
                                                         SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                                 .setName(capitalize(tier) + " Subscription")
@@ -96,8 +96,8 @@ public class StripeService {
         Integer months = durationMonths != null ? durationMonths : plan.getMinimumDurationMonths();
         BigDecimal totalAmount = plan.getPriceInr().multiply(BigDecimal.valueOf(months));
         
-        // Convert INR to cents (assuming 1 INR = 1.2 cents for Stripe, adjust as needed)
-        long amountInCents = totalAmount.multiply(BigDecimal.valueOf(1.2)).longValue();
+        // Convert to paise (1 INR = 100 paise for Stripe)
+        long amountInPaise = totalAmount.multiply(BigDecimal.valueOf(100)).longValue();
 
         String productName = plan.getName() + " Subscription";
         if (plan.getCourse() != null) {
@@ -112,14 +112,14 @@ public class StripeService {
                                 .setQuantity(1L)
                                 .setPriceData(
                                         SessionCreateParams.LineItem.PriceData.builder()
-                                                .setCurrency("usd")
+                                                .setCurrency("inr")
                                                 .setProductData(
                                                         SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                                 .setName(productName)
                                                                 .setDescription(plan.getDescription())
                                                                 .build()
                                                 )
-                                                .setUnitAmount(amountInCents)
+                                                .setUnitAmount(amountInPaise)
                                                 .build()
                                 )
                                 .build()
@@ -178,7 +178,7 @@ public class StripeService {
                             .setCustomer(stripeCustomerId)
                             .setQuantity((long) item.getQuantity())
                             .setUnitAmount((long) (item.getUnitPrice() * 100)) // Amount in cents
-                            .setCurrency("usd")
+                            .setCurrency("inr")
                             .setDescription(item.getDescription())
                             .build();
             com.stripe.model.InvoiceItem.create(invoiceItemParams);
