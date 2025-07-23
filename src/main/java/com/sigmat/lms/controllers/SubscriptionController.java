@@ -20,8 +20,8 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
 
     @GetMapping("/plans")
-    public ResponseEntity<List<SubscriptionPlanDTO>> getAllPlans() {
-        List<SubscriptionPlanDTO> plans = subscriptionService.getAllPlans();
+    public ResponseEntity<List<SubscriptionPlanDTO>> getAllPlans(@RequestParam(required = false) Long courseId) {
+        List<SubscriptionPlanDTO> plans = subscriptionService.getAllPlans(courseId);
         return ResponseEntity.ok(plans);
     }
 
@@ -52,6 +52,17 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscription);
     }
 
+    @PostMapping("/courses/{courseId}/users/{userId}/subscribe")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    public ResponseEntity<UserSubscriptionDTO> subscribeUserToCourse(
+            @PathVariable Long courseId,
+            @PathVariable Long userId,
+            @RequestBody SubscriptionRequestDTO request) {
+        request.setCourseId(courseId);
+        UserSubscriptionDTO subscription = subscriptionService.subscribeUser(userId, request);
+        return ResponseEntity.ok(subscription);
+    }
+
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<List<UserSubscriptionDTO>> getUserSubscriptions(@PathVariable Long userId) {
@@ -63,6 +74,18 @@ public class SubscriptionController {
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<UserSubscriptionDTO> getCurrentSubscription(@PathVariable Long userId) {
         UserSubscriptionDTO subscription = subscriptionService.getCurrentSubscription(userId);
+        if (subscription != null) {
+            return ResponseEntity.ok(subscription);
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/courses/{courseId}/users/{userId}/current")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    public ResponseEntity<UserSubscriptionDTO> getCurrentCourseSubscription(
+            @PathVariable Long courseId,
+            @PathVariable Long userId) {
+        UserSubscriptionDTO subscription = subscriptionService.getCurrentCourseSubscription(userId, courseId);
         if (subscription != null) {
             return ResponseEntity.ok(subscription);
         }

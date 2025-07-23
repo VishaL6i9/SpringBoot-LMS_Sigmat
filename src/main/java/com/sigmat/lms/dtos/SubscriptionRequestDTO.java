@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class SubscriptionRequestDTO {
     private Long planId;
+    private Long courseId;
     private boolean autoRenew;
     private BigDecimal discountApplied;
     private String paymentReference;

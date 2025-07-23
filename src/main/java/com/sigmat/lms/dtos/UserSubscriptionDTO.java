@@ -16,6 +16,7 @@ public class UserSubscriptionDTO {
     private Long userId;
     private String username;
     private SubscriptionPlanDTO subscriptionPlan;
+    private Long courseId;
     private SubscriptionStatus status;
     private LocalDateTime startDate;
     private LocalDateTime endDate;

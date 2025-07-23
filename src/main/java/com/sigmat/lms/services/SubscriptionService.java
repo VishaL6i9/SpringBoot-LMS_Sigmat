@@ -5,9 +5,10 @@ import com.sigmat.lms.dtos.SubscriptionRequestDTO;
 import com.sigmat.lms.dtos.UserSubscriptionDTO;
 import com.sigmat.lms.exceptions.ResourceNotFoundException;
 import com.sigmat.lms.models.*;
+import com.sigmat.lms.repository.CourseRepo;
+import com.sigmat.lms.repository.UserRepo;
 import com.sigmat.lms.repository.SubscriptionPlanRepository;
 import com.sigmat.lms.repository.UserSubscriptionRepository;
-import com.sigmat.lms.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +25,24 @@ public class SubscriptionService {
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final UserRepo userRepository;
+    private final CourseRepo courseRepository;
+
+    public List<SubscriptionPlanDTO> getAllPlans(Long courseId) {
+        if (courseId != null) {
+            return subscriptionPlanRepository.findByCourseIdAndIsActiveTrue(courseId)
+                    .stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        } else {
+            return subscriptionPlanRepository.findByIsActiveTrue()
+                    .stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        }
+    }
 
     public List<SubscriptionPlanDTO> getAllPlans() {
-        return subscriptionPlanRepository.findByIsActiveTrue()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return getAllPlans(null);
     }
 
     public List<SubscriptionPlanDTO> getPlansByType(SubscriptionPlanType planType) {
@@ -63,6 +76,12 @@ public class SubscriptionService {
         subscription.setStatus(SubscriptionStatus.ACTIVE);
         subscription.setStartDate(LocalDateTime.now());
         
+        if (request.getCourseId() != null) {
+            Course course = courseRepository.findById(request.getCourseId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + request.getCourseId()));
+            subscription.setCourse(course);
+        }
+
         // Calculate end date based on duration
         int durationMonths = request.getDurationMonths() != null ? 
                 request.getDurationMonths() : plan.getMinimumDurationMonths();
@@ -93,6 +112,17 @@ public class SubscriptionService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         return userSubscriptionRepository.findActiveSubscriptionByUser(user, LocalDateTime.now())
+                .map(this::convertToDTO)
+                .orElse(null);
+    }
+
+    public UserSubscriptionDTO getCurrentCourseSubscription(Long userId, Long courseId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
+
+        return userSubscriptionRepository.findActiveSubscriptionByUserAndCourse(user, course, LocalDateTime.now())
                 .map(this::convertToDTO)
                 .orElse(null);
     }
@@ -129,6 +159,9 @@ public class SubscriptionService {
     private SubscriptionPlanDTO convertToDTO(SubscriptionPlan plan) {
         SubscriptionPlanDTO dto = new SubscriptionPlanDTO();
         dto.setId(plan.getId());
+        if (plan.getCourse() != null) {
+            dto.setCourseId(plan.getCourse().getCourseId());
+        }
         dto.setName(plan.getName());
         dto.setPlanType(plan.getPlanType());
         dto.setLearnerTier(plan.getLearnerTier());
@@ -155,6 +188,9 @@ public class SubscriptionService {
         dto.setUserId(subscription.getUser().getId());
         dto.setUsername(subscription.getUser().getUsername());
         dto.setSubscriptionPlan(convertToDTO(subscription.getSubscriptionPlan()));
+        if (subscription.getCourse() != null) {
+            dto.setCourseId(subscription.getCourse().getCourseId());
+        }
         dto.setStatus(subscription.getStatus());
         dto.setStartDate(subscription.getStartDate());
         dto.setEndDate(subscription.getEndDate());
