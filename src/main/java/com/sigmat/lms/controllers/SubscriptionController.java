@@ -234,17 +234,5 @@ public class SubscriptionController {
         }
     }
 
-    @PostMapping("/checkout/webhook")
-    public ResponseEntity<?> handleStripeWebhook(
-            @RequestBody String payload,
-            @RequestHeader("Stripe-Signature") String sigHeader) {
-        try {
-            // TODO: Implement Stripe webhook verification and processing
-            // This would handle events like payment_intent.succeeded, checkout.session.completed, etc.
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body("Webhook processing failed");
-        }
-    }
+
 }
