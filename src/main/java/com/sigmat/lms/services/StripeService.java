@@ -2,7 +2,9 @@ package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.Invoice;
 import com.sigmat.lms.models.InvoiceItem;
+import com.sigmat.lms.models.SubscriptionPlan;
 import com.sigmat.lms.models.Users;
+import com.sigmat.lms.repository.SubscriptionPlanRepository;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
@@ -10,9 +12,11 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.InvoiceCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,12 +24,15 @@ import java.util.Map;
 @Service
 public class StripeService {
 
+    @Autowired
+    private SubscriptionPlanRepository subscriptionPlanRepository;
+
     public StripeService(@Value("${stripe.api.key}") String stripeApiKey) {
         Stripe.apiKey = stripeApiKey;
     }
 
     /**
-     * Creates a Stripe Checkout Session for a subscription tier.
+     * Creates a Stripe Checkout Session for a subscription tier (legacy method).
      */
     public String createCheckoutSession(String tier, String successUrl, String cancelUrl) throws Exception {
         long amount = switch (tier.toLowerCase()) {
@@ -65,6 +72,83 @@ public class StripeService {
 
         Session session = Session.create(params);
         return session.getUrl();
+    }
+
+    /**
+     * Creates a Stripe Checkout Session for a subscription plan.
+     */
+    public String createCheckoutSessionForPlan(Long planId, Integer durationMonths, String successUrl, String cancelUrl) throws Exception {
+        return createCheckoutSessionForPlan(planId, durationMonths, successUrl, cancelUrl, null);
+    }
+
+    /**
+     * Creates a Stripe Checkout Session for a subscription plan with user ID.
+     */
+    public String createCheckoutSessionForPlan(Long planId, Integer durationMonths, String successUrl, String cancelUrl, Long userId) throws Exception {
+        SubscriptionPlan plan = subscriptionPlanRepository.findById(planId)
+                .orElseThrow(() -> new IllegalArgumentException("Subscription plan not found with id: " + planId));
+
+        if (!plan.isActive()) {
+            throw new IllegalArgumentException("Subscription plan is not active");
+        }
+
+        // Calculate total amount based on duration
+        Integer months = durationMonths != null ? durationMonths : plan.getMinimumDurationMonths();
+        BigDecimal totalAmount = plan.getPriceInr().multiply(BigDecimal.valueOf(months));
+        
+        // Convert INR to cents (assuming 1 INR = 1.2 cents for Stripe, adjust as needed)
+        long amountInCents = totalAmount.multiply(BigDecimal.valueOf(1.2)).longValue();
+
+        String productName = plan.getName() + " Subscription";
+        if (plan.getCourse() != null) {
+            productName += " - " + plan.getCourse().getCourseName();
+        }
+        productName += " (" + months + " months)";
+
+        SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
+                .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+                .addLineItem(
+                        SessionCreateParams.LineItem.builder()
+                                .setQuantity(1L)
+                                .setPriceData(
+                                        SessionCreateParams.LineItem.PriceData.builder()
+                                                .setCurrency("usd")
+                                                .setProductData(
+                                                        SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                                .setName(productName)
+                                                                .setDescription(plan.getDescription())
+                                                                .build()
+                                                )
+                                                .setUnitAmount(amountInCents)
+                                                .build()
+                                )
+                                .build()
+                )
+                .setMode(SessionCreateParams.Mode.PAYMENT)
+                .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(cancelUrl)
+                .putMetadata("plan_id", planId.toString())
+                .putMetadata("duration_months", months.toString());
+
+        if (userId != null) {
+            paramsBuilder.putMetadata("user_id", userId.toString());
+        }
+
+        if (plan.getCourse() != null) {
+            paramsBuilder.putMetadata("course_id", plan.getCourse().getCourseId().toString());
+        }
+
+        SessionCreateParams params = paramsBuilder.build();
+
+        Session session = Session.create(params);
+        return session.getUrl();
+    }
+
+    /**
+     * Retrieves a Stripe checkout session by ID.
+     */
+    public Session getCheckoutSession(String sessionId) throws StripeException {
+        return Session.retrieve(sessionId);
     }
 
     /**
