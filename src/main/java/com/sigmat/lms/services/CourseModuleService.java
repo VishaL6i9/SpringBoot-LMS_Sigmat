@@ -1,12 +1,14 @@
 package com.sigmat.lms.services;
 
+import com.sigmat.lms.dtos.CourseModuleDTO;
+import com.sigmat.lms.dtos.LessonDTO;
 import com.sigmat.lms.exceptions.ResourceNotFoundException;
-import com.sigmat.lms.models.Course;
-import com.sigmat.lms.models.CourseModule;
+import com.sigmat.lms.models.*;
 import com.sigmat.lms.repository.CourseRepo;
 import com.sigmat.lms.repository.CourseModuleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,6 +27,7 @@ public class CourseModuleService {
         return courseModuleRepository.save(module);
     }
 
+    @Transactional(readOnly = true)
     public List<CourseModule> getModulesForCourse(Long courseId) {
         return courseRepository.findById(courseId).map(Course::getModules).orElseThrow(() -> new ResourceNotFoundException("Course not found"));
     }
@@ -39,5 +42,54 @@ public class CourseModuleService {
 
     public void deleteModule(Long moduleId) {
         courseModuleRepository.deleteById(moduleId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseModuleDTO> getModulesForCourseAsDTO(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+        
+        return course.getModules().stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    private CourseModuleDTO convertToDTO(CourseModule module) {
+        CourseModuleDTO dto = new CourseModuleDTO();
+        dto.setId(module.getId());
+        dto.setTitle(module.getTitle());
+        dto.setDescription(module.getDescription());
+        dto.setModuleOrder(module.getModuleOrder());
+        
+        if (module.getLessons() != null) {
+            dto.setLessons(module.getLessons().stream()
+                    .map(this::convertLessonToDTO)
+                    .toList());
+        }
+        
+        return dto;
+    }
+
+    private LessonDTO convertLessonToDTO(Lesson lesson) {
+        LessonDTO dto = new LessonDTO();
+        dto.setId(lesson.getId());
+        dto.setTitle(lesson.getTitle());
+        dto.setLessonOrder(lesson.getLessonOrder());
+        
+        if (lesson instanceof ArticleLesson articleLesson) {
+            dto.setType("article");
+            dto.setContent(articleLesson.getContent());
+        } else if (lesson instanceof VideoLesson videoLesson) {
+            dto.setType("video");
+            if (videoLesson.getVideo() != null) {
+                dto.setVideoId(videoLesson.getVideo().getId());
+            }
+        } else if (lesson instanceof Quiz) {
+            dto.setType("quiz");
+        } else if (lesson instanceof Assignment) {
+            dto.setType("assignment");
+        }
+        
+        return dto;
     }
 }

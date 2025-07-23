@@ -1,5 +1,6 @@
 package com.sigmat.lms.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Lob;
 import lombok.Data;
@@ -11,5 +12,6 @@ import lombok.EqualsAndHashCode;
 public class ArticleLesson extends Lesson {
 
     @Lob
+    @JsonIgnore
     private String content;
 }
