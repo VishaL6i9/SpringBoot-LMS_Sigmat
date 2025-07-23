@@ -1,23 +1,17 @@
 package com.sigmat.lms.dtos;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = "type"
-)
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = VideoLessonDTO.class, name = "video"),
-        @JsonSubTypes.Type(value = ArticleLessonDTO.class, name = "article"),
-        @JsonSubTypes.Type(value = QuizDTO.class, name = "quiz"),
-        @JsonSubTypes.Type(value = AssignmentDTO.class, name = "assignment")
-})
-public abstract class LessonDTO {
+@AllArgsConstructor
+@NoArgsConstructor
+public class LessonDTO {
     private Long id;
     private String title;
     private Integer lessonOrder;
+    private String type;
+    private String content; // For article lessons
+    private Long videoId; // For video lessons
 }

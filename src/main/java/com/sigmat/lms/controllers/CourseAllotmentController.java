@@ -1,5 +1,6 @@
 package com.sigmat.lms.controllers;
 
+import com.sigmat.lms.dtos.CourseModuleDTO;
 import com.sigmat.lms.models.CourseModule;
 import com.sigmat.lms.services.CourseModuleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ public class CourseAllotmentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CourseModule>> getModulesForCourse(@PathVariable Long courseId) {
-        return ResponseEntity.ok(courseModuleService.getModulesForCourse(courseId));
+    public ResponseEntity<List<CourseModuleDTO>> getModulesForCourse(@PathVariable Long courseId) {
+        return ResponseEntity.ok(courseModuleService.getModulesForCourseAsDTO(courseId));
     }
 }
