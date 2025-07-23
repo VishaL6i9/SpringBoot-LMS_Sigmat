@@ -29,7 +29,7 @@ public class SubscriptionService {
 
     public List<SubscriptionPlanDTO> getAllPlans(Long courseId) {
         if (courseId != null) {
-            return subscriptionPlanRepository.findByCourseIdAndIsActiveTrue(courseId)
+            return subscriptionPlanRepository.findByCourse_CourseIdAndIsActiveTrue(courseId)
                     .stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
