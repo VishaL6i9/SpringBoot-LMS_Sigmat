@@ -182,6 +182,20 @@ public class SubscriptionService {
                 .orElse(false);
     }
 
+    @Transactional
+    public UserSubscriptionDTO processCheckoutSuccess(String sessionId, Long userId, Long planId, Integer durationMonths, Long courseId) {
+        // Create subscription request
+        SubscriptionRequestDTO subscriptionRequest = new SubscriptionRequestDTO();
+        subscriptionRequest.setPlanId(planId);
+        subscriptionRequest.setDurationMonths(durationMonths);
+        subscriptionRequest.setCourseId(courseId);
+        subscriptionRequest.setAutoRenew(true);
+        subscriptionRequest.setPaymentReference("stripe_session_" + sessionId);
+
+        // Create the subscription
+        return subscribeUser(userId, subscriptionRequest);
+    }
+
     private UserSubscriptionDTO convertToDTO(UserSubscription subscription) {
         UserSubscriptionDTO dto = new UserSubscriptionDTO();
         dto.setId(subscription.getId());
