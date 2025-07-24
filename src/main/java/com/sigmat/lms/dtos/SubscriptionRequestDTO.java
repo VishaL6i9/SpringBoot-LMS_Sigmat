@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubscriptionRequestDTO {
+    private Long userId;
     private Long planId;
     private Long courseId;
     private boolean autoRenew;
