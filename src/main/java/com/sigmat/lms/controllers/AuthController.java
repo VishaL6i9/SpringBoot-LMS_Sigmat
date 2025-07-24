@@ -1,8 +1,8 @@
 package com.sigmat.lms.controllers;
 
+import com.sigmat.lms.dtos.LoginRequestDTO;
 import com.sigmat.lms.dtos.PasswordResetDTO;
 import com.sigmat.lms.dtos.PasswordResetRequestDTO;
-import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.services.JwtService;
@@ -40,7 +40,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserDTO loginUser ) {
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginUser ) {
         String username = loginUser .getUsername();
         String password = loginUser .getPassword();
 

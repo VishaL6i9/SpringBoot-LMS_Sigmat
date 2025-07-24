@@ -1,6 +1,7 @@
 package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.dtos.EnrollmentDTO;
+import com.sigmat.lms.dtos.UserProfileDTO;
 import com.sigmat.lms.dtos.UserSubscriptionDTO;
 import com.sigmat.lms.models.*;
 import com.sigmat.lms.repository.ProfileImageRepo;
@@ -53,11 +54,11 @@ public class UserProfileController {
 
     //Retrieve User Profile From UserID
     @GetMapping("/profile/{userID}")
-    public ResponseEntity<UserProfile> getUserProfile(@PathVariable Long userID, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable Long userID, @RequestHeader("Authorization") String token) {
         if (!isAuthorized(token, userID)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        UserProfile userProfile = userProfileService.getUserProfile(userID);
+        UserProfileDTO userProfile = userProfileService.getUserProfileDto(userID);
         return ResponseEntity.ok(userProfile);
     }
 
