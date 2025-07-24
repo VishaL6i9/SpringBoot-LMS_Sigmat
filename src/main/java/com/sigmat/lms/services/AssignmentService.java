@@ -1,5 +1,6 @@
 package com.sigmat.lms.services;
 
+import com.sigmat.lms.dtos.AssignmentDTO;
 import com.sigmat.lms.exceptions.ResourceNotFoundException;
 import com.sigmat.lms.models.Assignment;
 import com.sigmat.lms.models.AssignmentSubmission;
@@ -25,7 +26,12 @@ public class AssignmentService {
     @Autowired
     private UserRepo userRepository;
 
-    public Assignment createAssignment(Assignment assignment) {
+    public Assignment createAssignment(AssignmentDTO assignmentDTO) {
+        Assignment assignment = new Assignment();
+        assignment.setTitle(assignmentDTO.getTitle());
+        assignment.setDescription(assignmentDTO.getDescription());
+        assignment.setDueDate(LocalDateTime.parse(assignmentDTO.getDueDate()));
+        // Set other fields as necessary
         return assignmentRepository.save(assignment);
     }
 
