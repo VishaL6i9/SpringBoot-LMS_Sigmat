@@ -15,12 +15,21 @@
             "lastName": "Doe",
             "email": "john.doe@example.com",
             "phone": "123-456-7890",
-            "timezone": "UTC",
-            "language": "en",
             "address": "123 Main St",
-            "profileImage": null,
-            "users": {
-                "id": 1
+            "language": "en",
+            "timezone": "UTC",
+            "profileImage": {
+                "id": 1,
+                "imageName": "profile.jpg",
+                "contentType": "image/jpeg",
+                "imageData": "..." // Base64 encoded image data
+            },
+            "user": {
+                "id": 1,
+                "username": "testuser",
+                "email": "test@example.com",
+                "firstName": "Test",
+                "lastName": "User"
             }
         }
         ```
