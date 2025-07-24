@@ -3,6 +3,7 @@ package com.sigmat.lms.controllers;
 import com.sigmat.lms.dtos.LoginRequestDTO;
 import com.sigmat.lms.dtos.PasswordResetDTO;
 import com.sigmat.lms.dtos.PasswordResetRequestDTO;
+import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.services.JwtService;
@@ -29,9 +30,9 @@ public class AuthController {
     private static final Logger LOGGER = Logger.getLogger(AuthController.class.getName());
 
     @GetMapping("/users")
-    public ResponseEntity<List<Users>> getAllUsers() {
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
         try {
-            List<Users> users = userService.getAllUsers();
+            List<UserDTO> users = userService.getAllUsers();
             return ResponseEntity.ok(users);
         } catch (Exception e) {
             LOGGER.severe("Failed to fetch users: " + e.getMessage());

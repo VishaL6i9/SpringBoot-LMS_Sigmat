@@ -2,6 +2,7 @@ package com.sigmat.lms.services;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.dtos.EnrollmentDTO;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.UserProfile;
@@ -94,8 +95,20 @@ public class UserService {
         }
     }
 
-    public List<Users> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        List<Users> users = userRepository.findAll();
+        List<UserDTO> userDTOs = new ArrayList<>();
+        for (Users user : users) {
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setUsername(user.getUsername());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setFirstName(user.getFirstName());
+            userDTO.setLastName(user.getLastName());
+            userDTO.setRoles(user.getRoles()); // Map roles
+            userDTOs.add(userDTO);
+        }
+        return userDTOs;
     }
 
     @Transactional

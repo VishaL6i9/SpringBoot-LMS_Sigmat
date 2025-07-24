@@ -1,5 +1,6 @@
 package com.sigmat.lms.controllers;
 
+import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +20,8 @@ public class AdminController {
     private UserService userService;
 
     @GetMapping("/users")
-    public ResponseEntity<List<Users>> getUsers() {
-        List<Users> users = userService.getAllUsers();
+    public ResponseEntity<List<UserDTO>> getUsers() {
+        List<UserDTO> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
