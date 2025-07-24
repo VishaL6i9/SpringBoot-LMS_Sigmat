@@ -1,7 +1,6 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.dtos.NotificationDTO;
-import com.sigmat.lms.dtos.SubscriptionRequestDTO;
 import com.sigmat.lms.models.NotificationCategory;
 import com.sigmat.lms.models.NotificationPriority;
 import com.sigmat.lms.models.NotificationType;
@@ -12,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -25,7 +23,6 @@ public class StripeWebhookService {
 
     private final SubscriptionService subscriptionService;
     private final NotificationService notificationService;
-    private final StripeService stripeService;
 
     @Transactional
     public void handleCheckoutSessionCompleted(Event event) {
@@ -147,8 +144,15 @@ public class StripeWebhookService {
 
             // Get failure reason
             String reason = "Payment method declined";
-            if (invoice.getLastPaymentError() != null && invoice.getLastPaymentError().getMessage() != null) {
-                reason = invoice.getLastPaymentError().getMessage();
+            if (invoice.getPaymentIntent() != null) {
+                try {
+                    PaymentIntent paymentIntent = PaymentIntent.retrieve(invoice.getPaymentIntent());
+                    if (paymentIntent.getLastPaymentError() != null && paymentIntent.getLastPaymentError().getMessage() != null) {
+                        reason = paymentIntent.getLastPaymentError().getMessage();
+                    }
+                } catch (Exception e) {
+                    log.error("Could not retrieve payment intent", e);
+                }
             }
 
             // Send failure notification
@@ -273,8 +277,8 @@ public class StripeWebhookService {
             NotificationDTO notification = NotificationDTO.builder()
                     .title(getNotificationTitle(type))
                     .message(getNotificationMessage(type, data))
-                    .type(NotificationType.SYSTEM)
-                    .category(NotificationCategory.ALERT)
+                    .type(NotificationType.INFO)
+                    .category(NotificationCategory.SYSTEM)
                     .priority(type.contains("failed") ? NotificationPriority.HIGH : NotificationPriority.MEDIUM)
                     .build();
 
