@@ -1,5 +1,7 @@
 package com.sigmat.lms.services;
 
+import com.sigmat.lms.dtos.UserDTO;
+import com.sigmat.lms.dtos.UserProfileDTO;
 import com.sigmat.lms.exceptions.UserProfileNotFoundException;
 import com.sigmat.lms.models.ProfileImage;
 import com.sigmat.lms.models.UserProfile;
@@ -20,7 +22,7 @@ public class UserProfileService {
 
     private final UserProfileRepo userProfileRepository;
     private final UserRepo userRepo;
-    private final ProfileImageRepo profileImageRepo; 
+    private final ProfileImageRepo profileImageRepo;
     private final PasswordEncoder passwordEncoder;
 
     public UserProfileService(UserProfileRepo userProfileRepository, UserRepo userRepo, ProfileImageRepo profileImageRepo, PasswordEncoder passwordEncoder) {
@@ -34,6 +36,39 @@ public class UserProfileService {
         return userProfileRepository.findByUsersId(userId);
     }
 
+    public UserProfileDTO getUserProfileDto(Long userId) {
+        UserProfile userProfile = getUserProfile(userId);
+        if (userProfile == null) {
+            return null;
+        }
+        return convertToDto(userProfile);
+    }
+
+    private UserProfileDTO convertToDto(UserProfile userProfile) {
+        UserProfileDTO dto = new UserProfileDTO();
+        dto.setId(userProfile.getId());
+        dto.setFirstName(userProfile.getFirstName());
+        dto.setLastName(userProfile.getLastName());
+        dto.setEmail(userProfile.getEmail());
+        dto.setPhone(userProfile.getPhone());
+        dto.setAddress(userProfile.getAddress());
+        dto.setLanguage(userProfile.getLanguage());
+        dto.setTimezone(userProfile.getTimezone());
+        dto.setProfileImage(userProfile.getProfileImage());
+
+        if (userProfile.getUsers() != null) {
+            UserDTO userDto = new UserDTO();
+            userDto.setId(userProfile.getUsers().getId());
+            userDto.setUsername(userProfile.getUsers().getUsername());
+            userDto.setEmail(userProfile.getUsers().getEmail());
+            userDto.setFirstName(userProfile.getUsers().getFirstName());
+            userDto.setLastName(userProfile.getUsers().getLastName());
+            dto.setUser(userDto);
+        }
+
+        return dto;
+    }
+    
     public UserProfile updateUserProfile(Long userId, UserProfile userProfile) {
         UserProfile existingProfile = userProfileRepository.findByUsersId(userId);
         Optional<Users> existingUser  = userRepo.findById(userId);
