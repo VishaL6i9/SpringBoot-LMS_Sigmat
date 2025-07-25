@@ -23,6 +23,7 @@ public class StripeWebhookService {
 
     private final SubscriptionService subscriptionService;
     private final NotificationService notificationService;
+    private final CoursePurchaseService coursePurchaseService;
 
     @Transactional
     public void handleCheckoutSessionCompleted(Event event) {
@@ -35,28 +36,40 @@ public class StripeWebhookService {
         log.info("Checkout session completed: {}", session.getId());
 
         Map<String, String> metadata = session.getMetadata();
-        String planIdStr = metadata.get("plan_id");
+        String purchaseType = metadata.get("purchase_type");
         String userIdStr = metadata.get("user_id");
-        String courseIdStr = metadata.get("course_id");
-        String durationMonthsStr = metadata.get("duration_months");
 
-        if (planIdStr == null || userIdStr == null) {
-            log.error("Missing required metadata in checkout session");
+        if (userIdStr == null) {
+            log.error("Missing user_id in checkout session metadata");
             return;
         }
 
         try {
-            Long planId = Long.valueOf(planIdStr);
             Long userId = Long.valueOf(userIdStr);
-            Long courseId = courseIdStr != null ? Long.valueOf(courseIdStr) : null;
-            Integer durationMonths = durationMonthsStr != null ? Integer.valueOf(durationMonthsStr) : null;
 
-            // Create subscription
-            subscriptionService.processCheckoutSuccess(session.getId(), userId, planId, durationMonths);
-            log.info("Subscription created successfully for user: {}", userId);
+            if ("course".equals(purchaseType)) {
+                // Handle course purchase
+                coursePurchaseService.completePurchase(session.getId(), "stripe_session_" + session.getId());
+                log.info("Course purchase completed successfully for user: {}", userId);
+            } else {
+                // Handle subscription purchase (legacy)
+                String planIdStr = metadata.get("plan_id");
+                String durationMonthsStr = metadata.get("duration_months");
+
+                if (planIdStr == null) {
+                    log.error("Missing plan_id for subscription purchase");
+                    return;
+                }
+
+                Long planId = Long.valueOf(planIdStr);
+                Integer durationMonths = durationMonthsStr != null ? Integer.valueOf(durationMonthsStr) : null;
+
+                subscriptionService.processCheckoutSuccess(session.getId(), userId, planId, durationMonths);
+                log.info("Subscription created successfully for user: {}", userId);
+            }
 
         } catch (Exception e) {
-            log.error("Failed to create subscription from checkout session: {}", e.getMessage(), e);
+            log.error("Failed to process checkout session: {}", e.getMessage(), e);
         }
     }
 

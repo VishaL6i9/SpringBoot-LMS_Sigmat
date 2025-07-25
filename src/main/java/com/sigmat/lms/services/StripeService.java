@@ -4,7 +4,9 @@ import com.sigmat.lms.models.Invoice;
 import com.sigmat.lms.models.InvoiceItem;
 import com.sigmat.lms.models.SubscriptionPlan;
 import com.sigmat.lms.models.Users;
+import com.sigmat.lms.models.Course;
 import com.sigmat.lms.repository.SubscriptionPlanRepository;
+import com.sigmat.lms.repository.CourseRepo;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
@@ -26,6 +28,9 @@ public class StripeService {
 
     @Autowired
     private SubscriptionPlanRepository subscriptionPlanRepository;
+    
+    @Autowired
+    private CourseRepo courseRepository;
 
     public StripeService(@Value("${stripe.api.key}") String stripeApiKey) {
         Stripe.apiKey = stripeApiKey;
@@ -132,6 +137,65 @@ public class StripeService {
 
         SessionCreateParams params = paramsBuilder.build();
 
+        Session session = Session.create(params);
+        return session.getUrl();
+    }
+
+    /**
+     * Creates a Stripe Checkout Session for a course purchase.
+     */
+    public String createCourseCheckoutSession(Long courseId, Long userId, BigDecimal discountApplied, String successUrl, String cancelUrl) throws Exception {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new IllegalArgumentException("Course not found with id: " + courseId));
+
+        // Calculate final amount
+        BigDecimal coursePrice = BigDecimal.valueOf(course.getCourseFee());
+        BigDecimal discount = discountApplied != null ? discountApplied : BigDecimal.ZERO;
+        BigDecimal finalAmount = coursePrice.subtract(discount);
+        
+        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            finalAmount = BigDecimal.ZERO;
+        }
+        
+        // Convert to paise (1 INR = 100 paise for Stripe)
+        long amountInPaise = finalAmount.multiply(BigDecimal.valueOf(100)).longValue();
+
+        String productName = course.getCourseName();
+        String productDescription = course.getCourseDescription();
+        if (productDescription == null || productDescription.trim().isEmpty()) {
+            productDescription = "Access to " + course.getCourseName() + " course";
+        }
+
+        SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
+                .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+                .addLineItem(
+                        SessionCreateParams.LineItem.builder()
+                                .setQuantity(1L)
+                                .setPriceData(
+                                        SessionCreateParams.LineItem.PriceData.builder()
+                                                .setCurrency("inr")
+                                                .setProductData(
+                                                        SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                                .setName(productName)
+                                                                .setDescription(productDescription)
+                                                                .build()
+                                                )
+                                                .setUnitAmount(amountInPaise)
+                                                .build()
+                                )
+                                .build()
+                )
+                .setMode(SessionCreateParams.Mode.PAYMENT)
+                .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(cancelUrl)
+                .putMetadata("course_id", courseId.toString())
+                .putMetadata("user_id", userId.toString())
+                .putMetadata("purchase_type", "course")
+                .putMetadata("original_price", coursePrice.toString())
+                .putMetadata("discount_applied", discount.toString())
+                .putMetadata("final_amount", finalAmount.toString());
+
+        SessionCreateParams params = paramsBuilder.build();
         Session session = Session.create(params);
         return session.getUrl();
     }
