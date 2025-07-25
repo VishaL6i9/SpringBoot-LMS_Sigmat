@@ -52,7 +52,7 @@ public class StripeWebhookService {
             Integer durationMonths = durationMonthsStr != null ? Integer.valueOf(durationMonthsStr) : null;
 
             // Create subscription
-            subscriptionService.processCheckoutSuccess(session.getId(), userId, planId, durationMonths, courseId);
+            subscriptionService.processCheckoutSuccess(session.getId(), userId, planId, durationMonths);
             log.info("Subscription created successfully for user: {}", userId);
 
         } catch (Exception e) {

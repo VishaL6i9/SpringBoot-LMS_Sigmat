@@ -99,11 +99,7 @@ public class StripeService {
         // Convert to paise (1 INR = 100 paise for Stripe)
         long amountInPaise = totalAmount.multiply(BigDecimal.valueOf(100)).longValue();
 
-        String productName = plan.getName() + " Subscription";
-        if (plan.getCourse() != null) {
-            productName += " - " + plan.getCourse().getCourseName();
-        }
-        productName += " (" + months + " months)";
+        String productName = plan.getName() + " Subscription (" + months + " months)";
 
         SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
                 .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
@@ -132,10 +128,6 @@ public class StripeService {
 
         if (userId != null) {
             paramsBuilder.putMetadata("user_id", userId.toString());
-        }
-
-        if (plan.getCourse() != null) {
-            paramsBuilder.putMetadata("course_id", plan.getCourse().getCourseId().toString());
         }
 
         SessionCreateParams params = paramsBuilder.build();

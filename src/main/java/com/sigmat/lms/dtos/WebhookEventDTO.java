@@ -15,7 +15,7 @@ public class WebhookEventDTO {
     private String invoiceId;
     private Long userId;
     private Long planId;
-    private Long courseId;
+    
     private Integer durationMonths;
     private Double amount;
     private String status;

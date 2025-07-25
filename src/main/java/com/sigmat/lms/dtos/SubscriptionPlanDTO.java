@@ -15,7 +15,6 @@ import java.util.List;
 @AllArgsConstructor
 public class SubscriptionPlanDTO {
     private Long id;
-    private Long courseId;
     private String name;
     private SubscriptionPlanType planType;
     private LearnerPlanTier learnerTier;

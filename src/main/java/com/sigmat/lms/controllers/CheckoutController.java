@@ -50,10 +50,7 @@ public class CheckoutController {
                     request.getCancelUrl()
                 );
                 
-                // Legacy enrollment logic
-                if (request.getUserId() != null && request.getCourseId() != null) {
-                    enrollmentService.enrollUserInCourse(request.getUserId(), request.getCourseId(), request.getInstructorId());
-                }
+
             } 
             else {
                 return ResponseEntity.badRequest().body("Either planId or tier must be provided");

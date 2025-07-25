@@ -25,8 +25,8 @@ public class SubscriptionController {
     private final StripeService stripeService;
 
     @GetMapping("/plans")
-    public ResponseEntity<List<SubscriptionPlanDTO>> getAllPlans(@RequestParam(required = false) Long courseId) {
-        List<SubscriptionPlanDTO> plans = subscriptionService.getAllPlans(courseId);
+    public ResponseEntity<List<SubscriptionPlanDTO>> getAllPlans() {
+        List<SubscriptionPlanDTO> plans = subscriptionService.getAllPlans();
         return ResponseEntity.ok(plans);
     }
 
@@ -57,16 +57,7 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscription);
     }
 
-    @PostMapping("/courses/{courseId}/users/{userId}/subscribe")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    public ResponseEntity<UserSubscriptionDTO> subscribeUserToCourse(
-            @PathVariable Long courseId,
-            @PathVariable Long userId,
-            @RequestBody SubscriptionRequestDTO request) {
-        request.setCourseId(courseId);
-        UserSubscriptionDTO subscription = subscriptionService.subscribeUser(userId, request);
-        return ResponseEntity.ok(subscription);
-    }
+
 
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
@@ -85,17 +76,7 @@ public class SubscriptionController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/courses/{courseId}/users/{userId}/current")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    public ResponseEntity<UserSubscriptionDTO> getCurrentCourseSubscription(
-            @PathVariable Long courseId,
-            @PathVariable Long userId) {
-        UserSubscriptionDTO subscription = subscriptionService.getCurrentCourseSubscription(userId, courseId);
-        if (subscription != null) {
-            return ResponseEntity.ok(subscription);
-        }
-        return ResponseEntity.noContent().build();
-    }
+
 
     @PutMapping("/{subscriptionId}/cancel")
     @PreAuthorize("hasRole('ADMIN') or @subscriptionService.isSubscriptionOwner(#subscriptionId, authentication.principal.id)")
@@ -129,10 +110,7 @@ public class SubscriptionController {
                 return ResponseEntity.badRequest().body("Subscription plan is not active");
             }
 
-            // Ensure it's a platform-wide plan (not course-specific)
-            if (plan.getCourseId() != null) {
-                return ResponseEntity.badRequest().body("Use course-specific checkout endpoint for course plans");
-            }
+
 
             String sessionUrl = stripeService.createCheckoutSessionForPlan(
                 request.getPlanId(), 
@@ -156,48 +134,7 @@ public class SubscriptionController {
         }
     }
 
-    @PostMapping("/courses/{courseId}/users/{userId}/checkout")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    public ResponseEntity<?> createCourseSubscriptionCheckout(
-            @PathVariable Long courseId,
-            @PathVariable Long userId,
-            @RequestBody CheckoutSessionDTO request) {
-        try {
-            if (request.getPlanId() == null) {
-                return ResponseEntity.badRequest().body("Plan ID is required for course subscription");
-            }
 
-            // Verify the plan exists and is for the specified course
-            var plan = subscriptionService.getPlanById(request.getPlanId());
-            if (!plan.isActive()) {
-                return ResponseEntity.badRequest().body("Subscription plan is not active");
-            }
-            if (plan.getCourseId() == null || !plan.getCourseId().equals(courseId)) {
-                return ResponseEntity.badRequest().body("Plan is not valid for the specified course");
-            }
-
-            String sessionUrl = stripeService.createCheckoutSessionForPlan(
-                request.getPlanId(), 
-                request.getDurationMonths(), 
-                request.getSuccessUrl(), 
-                request.getCancelUrl(),
-                userId
-            );
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("sessionUrl", sessionUrl);
-            response.put("planId", request.getPlanId());
-            response.put("courseId", courseId);
-            response.put("userId", userId);
-            return ResponseEntity.ok(response);
-            
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Error creating course subscription checkout: " + e.getMessage());
-        }
-    }
 
     @PostMapping("/checkout/success")
     public ResponseEntity<?> handleCheckoutSuccess(
@@ -214,12 +151,10 @@ public class SubscriptionController {
             // Extract metadata
             Long planId = Long.valueOf(session.getMetadata().get("plan_id"));
             Integer durationMonths = Integer.valueOf(session.getMetadata().get("duration_months"));
-            Long courseId = session.getMetadata().get("course_id") != null ? 
-                Long.valueOf(session.getMetadata().get("course_id")) : null;
 
             // Process the checkout success
             UserSubscriptionDTO subscription = subscriptionService.processCheckoutSuccess(
-                sessionId, userId, planId, durationMonths, courseId);
+                sessionId, userId, planId, durationMonths);
 
             Map<String, Object> response = new HashMap<>();
             response.put("subscription", subscription);

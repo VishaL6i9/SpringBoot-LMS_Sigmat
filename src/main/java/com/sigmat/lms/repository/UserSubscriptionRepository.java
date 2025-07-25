@@ -29,9 +29,4 @@ public interface UserSubscriptionRepository extends JpaRepository<UserSubscripti
     List<UserSubscription> findExpiredActiveSubscriptions(@Param("currentDate") LocalDateTime currentDate);
     
     List<UserSubscription> findByStatus(SubscriptionStatus status);
-
-    Optional<UserSubscription> findByUserAndCourseAndStatus(Users user, Course course, SubscriptionStatus status);
-
-    @Query("SELECT us FROM UserSubscription us WHERE us.user = :user AND us.course = :course AND us.status = 'ACTIVE' AND us.endDate > :currentDate")
-    Optional<UserSubscription> findActiveSubscriptionByUserAndCourse(@Param("user") Users user, @Param("course") Course course, @Param("currentDate") LocalDateTime currentDate);
 }

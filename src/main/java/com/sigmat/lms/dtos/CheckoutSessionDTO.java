@@ -19,7 +19,7 @@ public class CheckoutSessionDTO {
     private String successUrl;
     private String cancelUrl;
     private Long userId;
-    private Long courseId;
+    
     private Long instructorId;
 
 }
