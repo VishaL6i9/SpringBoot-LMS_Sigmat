@@ -1,32 +1,31 @@
 package com.sigmat.lms.models;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "attendance")
 public class Attendance {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long attendanceID;
+    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "courseId", referencedColumnName = "courseId")
-    private Course course;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
 
-    @ManyToOne
-    @JoinColumn(name = "learner_id", referencedColumnName = "learner_id")
-    private Learner learner;
+    @Column(nullable = false)
+    private LocalDateTime timestamp;
 
-    @Column(columnDefinition = "DATE")
-    private Date attendanceDate;
-
-    private String status; 
-
-   
+    @PrePersist
+    protected void onCreate() {
+        timestamp = LocalDateTime.now();
+    }
 }
