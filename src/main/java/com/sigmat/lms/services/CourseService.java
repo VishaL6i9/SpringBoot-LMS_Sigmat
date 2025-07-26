@@ -122,6 +122,15 @@ public class CourseService {
         return courseRepo.findByCourseId(courseId).map(this::convertToDTO);
     }
 
-    
+    public List<CourseDTO> getCoursesByUserId(Long userId) {
+        Optional<Instructor> instructorOptional = instructorRepo.findByUser_Id(userId);
+        if (instructorOptional.isPresent()) {
+            return courseRepo.findByInstructors_InstructorId(instructorOptional.get().getInstructorId()).stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        } else {
+            return List.of(); // Return an empty list if no instructor found for the user ID
+        }
+    }
 
 }

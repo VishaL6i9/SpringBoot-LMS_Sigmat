@@ -26,6 +26,10 @@ public class Instructor {
     private String phoneNo; 
     private LocalDate dateOfJoining; 
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", unique = true)
+    private Users user;
+
     
     //@Column
     //private List<Course> assignedCourses;

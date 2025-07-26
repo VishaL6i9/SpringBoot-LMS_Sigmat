@@ -71,4 +71,15 @@ public class CourseController {
         courseService.deleteCourse(courseId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
+    public ResponseEntity<List<CourseDTO>> getCoursesByUserId(@PathVariable Long userId) {
+        List<CourseDTO> courses = courseService.getCoursesByUserId(userId);
+        if (courses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } else {
+            return ResponseEntity.ok(courses);
+        }
+    }
 }

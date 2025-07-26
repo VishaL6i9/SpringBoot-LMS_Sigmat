@@ -8,5 +8,7 @@ import java.util.Optional;
 public interface InstructorRepo extends JpaRepository<Instructor, Long> {
     Optional<Instructor> findByFirstName(String firstName);
     Optional<Instructor> findByInstructorId(Long instructorId);
+    Optional<Instructor> findByUser_Id(Long userId);
     
 }
+
