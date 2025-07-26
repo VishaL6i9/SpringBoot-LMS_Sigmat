@@ -27,6 +27,10 @@ public class AuthController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private com.sigmat.lms.services.AttendanceService attendanceService;
+
     private static final Logger LOGGER = Logger.getLogger(AuthController.class.getName());
 
     @GetMapping("/users")
@@ -47,6 +51,10 @@ public class AuthController {
 
         if (userService.validateUser (username, password)) {
             String token = userService.generateToken(username);
+            Users user = userService.findByUsername(username);
+            if (user != null) {
+                attendanceService.recordAttendance(user);
+            }
             return ResponseEntity.ok().body(token);
         } else {
             return ResponseEntity.status(401).body(Map.of("message", "Login failed! Invalid credentials."));
