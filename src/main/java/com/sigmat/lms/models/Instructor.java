@@ -26,6 +26,11 @@ public class Instructor {
     private String phoneNo; 
     private LocalDate dateOfJoining; 
 
+    private String bankName;
+    private String accountNumber;
+    private String routingNumber;
+    private String accountHolderName;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
     private Users user;

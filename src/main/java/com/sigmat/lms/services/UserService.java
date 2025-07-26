@@ -2,8 +2,11 @@ package com.sigmat.lms.services;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
-import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.dtos.EnrollmentDTO;
+import com.sigmat.lms.dtos.InstructorRegistrationDTO;
+import com.sigmat.lms.dtos.SubscriptionRequestDTO;
+import com.sigmat.lms.dtos.UserDTO;
+import com.sigmat.lms.models.Instructor;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.models.Users;
@@ -33,18 +36,22 @@ public class UserService {
     private final JwtService jwtUtil;
     private final EmailService emailService; 
     private final EnrollmentService enrollmentService; // Inject EnrollmentService
+    private final InstructorService instructorService; // Inject InstructorService
+    private final SubscriptionService subscriptionService; // Inject SubscriptionService
     private PasswordEncoder passwordEncoder;
     private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
 
     private final Set<String> invalidatedTokens = new HashSet<>();
 
-    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService, PasswordEncoder passwordEncoder, EnrollmentService enrollmentService) {
+    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService, PasswordEncoder passwordEncoder, EnrollmentService enrollmentService, InstructorService instructorService, SubscriptionService subscriptionService) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.jwtUtil = jwtUtil;
         this.emailService = emailService; 
         this.passwordEncoder = passwordEncoder;
         this.enrollmentService = enrollmentService; // Initialize EnrollmentService
+        this.instructorService = instructorService; // Initialize InstructorService
+        this.subscriptionService = subscriptionService; // Initialize SubscriptionService
     }
 
     public boolean validateUser(String username, String password) {
@@ -299,5 +306,41 @@ public class UserService {
         user.setPasswordResetToken(null);
         user.setPasswordResetTokenExpiration(null);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public void registerInstructor(InstructorRegistrationDTO instructorDTO) {
+        Users newUser = new Users();
+        newUser.setUsername(instructorDTO.getUsername());
+        newUser.setPassword(instructorDTO.getPassword()); 
+        newUser.setEmail(instructorDTO.getEmail());
+        newUser.setFirstName(instructorDTO.getFirstName());
+        newUser.setLastName(instructorDTO.getLastName());
+        newUser.getRoles().add(Role.INSTRUCTOR);
+
+        saveUser(newUser); 
+
+        Instructor instructor = new Instructor();
+        instructor.setUser(newUser);
+        instructor.setFirstName(instructorDTO.getFirstName());
+        instructor.setLastName(instructorDTO.getLastName());
+        instructor.setEmail(instructorDTO.getEmail());
+        instructor.setPhoneNo(instructorDTO.getPhoneNo());
+        instructor.setBankName(instructorDTO.getBankName());
+        instructor.setAccountNumber(instructorDTO.getAccountNumber());
+        instructor.setRoutingNumber(instructorDTO.getRoutingNumber());
+        instructor.setAccountHolderName(instructorDTO.getAccountHolderName());
+        instructor.setDateOfJoining(java.time.LocalDate.now());
+
+        instructorService.saveInstructor(instructor);
+
+        // Auto-assign to faculty Free Tier
+        SubscriptionRequestDTO subscriptionRequest = new SubscriptionRequestDTO();
+        subscriptionRequest.setPlanId(6L);
+        subscriptionRequest.setDurationMonths(1);
+        subscriptionRequest.setAutoRenew(false);
+        subscriptionRequest.setPaymentReference("auto_assigned_faculty_plan");
+
+        subscriptionService.subscribeUser(newUser.getId(), subscriptionRequest);
     }
 }

@@ -4,6 +4,7 @@ import com.sigmat.lms.dtos.LoginRequestDTO;
 import com.sigmat.lms.dtos.PasswordResetDTO;
 import com.sigmat.lms.dtos.PasswordResetRequestDTO;
 import com.sigmat.lms.dtos.UserDTO;
+import com.sigmat.lms.dtos.InstructorRegistrationDTO;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.services.JwtService;
@@ -84,6 +85,17 @@ public class AuthController {
         } catch (Exception e) {
             LOGGER.severe("Registration failed: " + e.getMessage());
             return ResponseEntity.status(400).body("Registration failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/register/instructor")
+    public ResponseEntity<?> registerInstructor(@RequestBody InstructorRegistrationDTO instructorDTO) {
+        try {
+            userService.registerInstructor(instructorDTO);
+            return ResponseEntity.ok().body("Instructor registered successfully!");
+        } catch (Exception e) {
+            LOGGER.severe("Instructor registration failed: " + e.getMessage());
+            return ResponseEntity.status(400).body("Instructor registration failed: " + e.getMessage());
         }
     }
 
