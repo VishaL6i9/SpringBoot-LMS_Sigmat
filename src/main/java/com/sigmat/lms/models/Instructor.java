@@ -26,10 +26,10 @@ public class Instructor {
     private String phoneNo; 
     private LocalDate dateOfJoining; 
 
-    private String bankName;
-    private String accountNumber;
-    private String routingNumber;
-    private String accountHolderName;
+    // Social media handles
+    private String facebookHandle;
+    private String linkedinHandle;
+    private String youtubeHandle;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
