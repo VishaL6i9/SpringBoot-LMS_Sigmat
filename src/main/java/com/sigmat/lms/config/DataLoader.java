@@ -24,6 +24,7 @@ public class DataLoader {
             UserService userService,
             CourseRepo courseRepo,
             InstructorRepo instructorRepo,
+            InstructorProfileService instructorProfileService,
             CourseService courseService,
             CourseModuleService moduleService,
             LessonService lessonService,
@@ -33,6 +34,25 @@ public class DataLoader {
             VideoService videoService) {
        
         return args -> {
+            // Create SuperAdmin User
+            Users superAdminUser = null;
+            if (userRepo.findByUsername("superadmin") == null) {
+                superAdminUser = new Users();
+                superAdminUser.setUsername("superadmin");
+                superAdminUser.setPassword("superadminpass");
+                superAdminUser.setEmail("superadmin@example.com");
+                superAdminUser.setFirstName("Super");
+                superAdminUser.setLastName("Admin");
+                Set<Role> superAdminRoles = new HashSet<>();
+                superAdminRoles.add(Role.SUPER_ADMIN);
+                superAdminUser.setRoles(superAdminRoles);
+                userService.saveUser(superAdminUser);
+                superAdminUser.setVerified(true);
+                superAdminUser.setVerificationToken(null);
+                superAdminUser = userRepo.save(superAdminUser);
+                System.out.println("Created super admin user: " + superAdminUser.getUsername());
+            }
+
             // Create Admin User
             Users adminUser = null;
             if (userRepo.findByUsername("admin") == null) {
@@ -53,8 +73,8 @@ public class DataLoader {
             }
 
             // Create Instructor User
-            Users instructorUser = null;
-            if (userRepo.findByUsername("instructor") == null) {
+            Users instructorUser = userRepo.findByUsername("instructor");
+            if (instructorUser == null) {
                 instructorUser = new Users();
                 instructorUser.setUsername("instructor");
                 instructorUser.setPassword("instructorpass");
@@ -95,13 +115,38 @@ public class DataLoader {
             Optional<Instructor> existingInstructor = instructorRepo.findByFirstName("Instructor");
             if (existingInstructor.isEmpty()) {
                 instructor = new Instructor();
+                instructor.setUser(instructorUser);
                 instructor.setFirstName("Instructor");
                 instructor.setLastName("Demo");
                 instructor.setEmail("instructor@example.com");
-               // instructor.setBio("Experienced instructor with expertise in programming and software development.");
-              //  instructor.setSpecialization("Software Development");
+                instructor.setPhoneNo("555-0123");
+                instructor.setDateOfJoining(java.time.LocalDate.now());
+                instructor.setFacebookHandle("instructordemo");
+                instructor.setLinkedinHandle("instructor-demo");
+                instructor.setYoutubeHandle("instructordemotech");
                 instructor = instructorRepo.save(instructor);
                 System.out.println("Created instructor: " + instructor.getFirstName());
+                
+                // Create instructor profile
+                try {
+                    InstructorProfile instructorProfile = instructorProfileService.createInstructorProfile(instructor.getInstructorId());
+                    
+                    // Update profile with additional information
+                    instructorProfile.setBio("Experienced instructor with expertise in programming and software development.");
+                    instructorProfile.setSpecialization("Software Development");
+                    instructorProfile.setAddress("123 Education Street, Tech City, TC 12345");
+                    instructorProfile.setTimezone("UTC");
+                    instructorProfile.setLanguage("English");
+                    instructorProfile.setBankName("Demo Bank");
+                    instructorProfile.setAccountNumber("1234567890");
+                    instructorProfile.setRoutingNumber("123456789");
+                    instructorProfile.setAccountHolderName("Instructor Demo");
+                    
+                    instructorProfileService.updateInstructorProfile(instructor.getInstructorId(), instructorProfile);
+                    System.out.println("Created instructor profile for: " + instructor.getFirstName());
+                } catch (Exception e) {
+                    System.out.println("Note: Could not create instructor profile - may already exist or service unavailable");
+                }
             } else {
                 instructor = existingInstructor.get();
             }
