@@ -50,6 +50,29 @@
         ```
     *   **Expected Status:** `200 OK`
 
+*   **Register Instructor**
+    *   **Endpoint:** `/api/public/register/instructor`
+    *   **Method:** `POST`
+    *   **Required Role:** None (public)
+    *   **Request Body (JSON):**
+        ```json
+        {
+            "username": "newinstructor",
+            "password": "password123",
+            "email": "instructor@example.com",
+            "firstName": "New",
+            "lastName": "Instructor",
+            "phoneNo": "123-456-7890",
+            "bankName": "Example Bank",
+            "accountNumber": "1234567890",
+            "routingNumber": "123456789",
+            "accountHolderName": "New Instructor"
+        }
+        ```
+    *   **Expected Status:** `200 OK`
+    *   **Expected Response:** `"Instructor registered successfully!"`
+    *   **Note:** Social media handles are NOT required for registration and will be null initially. They can be added later through the instructor profile system.
+
 *   **Register Batch Users**
     *   **Endpoint:** `/api/public/register/batch`
     *   **Method:** `POST`

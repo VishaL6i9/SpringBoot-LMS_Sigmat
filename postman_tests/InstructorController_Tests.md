@@ -19,6 +19,7 @@
             "youtubeHandle": "newinstructortech"
         }
         ```
+    *   **Note:** Social media handles (`facebookHandle`, `linkedinHandle`, `youtubeHandle`) are optional and can be omitted
     *   **Expected Status (SUPER_ADMIN/ADMIN):** `201 Created`
     *   **Sample Response Body (JSON):**
         ```json
