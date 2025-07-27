@@ -6,6 +6,7 @@ import com.sigmat.lms.dtos.EnrollmentDTO;
 import com.sigmat.lms.dtos.InstructorRegistrationDTO;
 import com.sigmat.lms.dtos.SubscriptionRequestDTO;
 import com.sigmat.lms.dtos.UserDTO;
+import com.sigmat.lms.exceptions.DuplicateEmailException;
 import com.sigmat.lms.models.Instructor;
 import com.sigmat.lms.models.InstructorProfile;
 import com.sigmat.lms.models.Role;
@@ -18,6 +19,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -67,14 +69,26 @@ public class UserService {
     }
 
     @Transactional
-    public void saveUser(Users user) {
-        String verificationToken = UUID.randomUUID().toString();
-        user.setVerificationToken(verificationToken);
-        user.setVerified(false);
-        
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
+    public void saveUser(Users user) throws DuplicateEmailException {
         try {
+            // Check if email already exists before attempting to save
+            if (userRepository.existsByEmail(user.getEmail())) {
+                LOGGER.warning("Attempted registration with existing email: " + user.getEmail());
+                throw new DuplicateEmailException(user.getEmail());
+            }
+            
+            // Check if username already exists
+            if (userRepository.existsByUsername(user.getUsername())) {
+                LOGGER.warning("Attempted registration with existing username: " + user.getUsername());
+                throw new RuntimeException("This username is already taken. Please choose a different username.");
+            }
+            
+            String verificationToken = UUID.randomUUID().toString();
+            user.setVerificationToken(verificationToken);
+            user.setVerified(false);
+            
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+
             LOGGER.info("Saving user: " + user.getUsername() + ", First Name: " + user.getFirstName() + ", Last Name: " + user.getLastName());
 
             Users savedUser = userRepository.save(user);
@@ -96,13 +110,36 @@ public class UserService {
             emailService.sendVerificationEmail(savedUser.getEmail(), verificationToken);
 
             LOGGER.info("User registered successfully: " + savedUser.getUsername());
+            
+        } catch (DuplicateEmailException e) {
+            throw e; // Re-throw custom exception
+            
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.severe("Database constraint violation while saving user: " + e.getMessage());
+            String constraintMessage = handleDatabaseConstraintViolation(e);
+            throw new RuntimeException(constraintMessage);
+            
         } catch (ObjectOptimisticLockingFailureException e) {
             LOGGER.warning("User was updated by another transaction: " + e.getMessage());
             throw new RuntimeException("Registration failed due to a conflict. Please try again.");
+            
         } catch (Exception e) {
-            LOGGER.severe("Error saving user: " + e.getMessage());
-            throw new RuntimeException("Registration failed. Please try again.");
+            LOGGER.severe("Unexpected error saving user: " + e.getMessage());
+            throw new RuntimeException("An unexpected error occurred during registration. Please try again.");
         }
+    }
+
+    private String handleDatabaseConstraintViolation(DataIntegrityViolationException e) {
+        String errorMessage = e.getMessage();
+        
+        if (errorMessage != null && errorMessage.contains("users_email_key")) {
+            return "This email address is already registered in our system.";
+        }
+        if (errorMessage != null && errorMessage.contains("users_username_key")) {
+            return "This username is already taken. Please choose a different username.";
+        }
+        
+        return "This information is already registered in our system. Please check your details.";
     }
 
     public List<UserDTO> getAllUsers() {
@@ -368,45 +405,71 @@ public class UserService {
     }
 
     @Transactional
-    public void registerInstructor(InstructorRegistrationDTO instructorDTO) {
-        Users newUser = new Users();
-        newUser.setUsername(instructorDTO.getUsername());
-        newUser.setPassword(instructorDTO.getPassword()); 
-        newUser.setEmail(instructorDTO.getEmail());
-        newUser.setFirstName(instructorDTO.getFirstName());
-        newUser.setLastName(instructorDTO.getLastName());
-        newUser.getRoles().add(Role.INSTRUCTOR);
+    public void registerInstructor(InstructorRegistrationDTO instructorDTO) throws DuplicateEmailException {
+        try {
+            // Check for duplicate email before creating user
+            if (userRepository.existsByEmail(instructorDTO.getEmail())) {
+                LOGGER.warning("Attempted instructor registration with existing email: " + instructorDTO.getEmail());
+                throw new DuplicateEmailException(instructorDTO.getEmail());
+            }
+            
+            // Check for duplicate username
+            if (userRepository.existsByUsername(instructorDTO.getUsername())) {
+                LOGGER.warning("Attempted instructor registration with existing username: " + instructorDTO.getUsername());
+                throw new RuntimeException("This username is already taken. Please choose a different username.");
+            }
+            
+            Users newUser = new Users();
+            newUser.setUsername(instructorDTO.getUsername());
+            newUser.setPassword(instructorDTO.getPassword()); 
+            newUser.setEmail(instructorDTO.getEmail());
+            newUser.setFirstName(instructorDTO.getFirstName());
+            newUser.setLastName(instructorDTO.getLastName());
+            newUser.getRoles().add(Role.INSTRUCTOR);
 
-        saveUser(newUser); 
+            saveUser(newUser); 
 
-        Instructor instructor = new Instructor();
-        instructor.setUser(newUser);
-        instructor.setFirstName(instructorDTO.getFirstName());
-        instructor.setLastName(instructorDTO.getLastName());
-        instructor.setEmail(instructorDTO.getEmail());
-        instructor.setPhoneNo(instructorDTO.getPhoneNo());
-        instructor.setDateOfJoining(java.time.LocalDate.now());
+            Instructor instructor = new Instructor();
+            instructor.setUser(newUser);
+            instructor.setFirstName(instructorDTO.getFirstName());
+            instructor.setLastName(instructorDTO.getLastName());
+            instructor.setEmail(instructorDTO.getEmail());
+            instructor.setPhoneNo(instructorDTO.getPhoneNo());
+            instructor.setDateOfJoining(java.time.LocalDate.now());
 
-        Instructor savedInstructor = instructorService.saveInstructor(instructor);
+            Instructor savedInstructor = instructorService.saveInstructor(instructor);
 
-        // Create instructor profile
-        InstructorProfile instructorProfile = instructorProfileService.createInstructorProfile(savedInstructor.getInstructorId());
-        
-        // Update profile with banking information
-        instructorProfile.setBankName(instructorDTO.getBankName());
-        instructorProfile.setAccountNumber(instructorDTO.getAccountNumber());
-        instructorProfile.setRoutingNumber(instructorDTO.getRoutingNumber());
-        instructorProfile.setAccountHolderName(instructorDTO.getAccountHolderName());
-        
-        instructorProfileService.updateInstructorProfile(savedInstructor.getInstructorId(), instructorProfile);
+            // Create instructor profile
+            InstructorProfile instructorProfile = instructorProfileService.createInstructorProfile(savedInstructor.getInstructorId());
+            
+            // Update profile with banking information
+            instructorProfile.setBankName(instructorDTO.getBankName());
+            instructorProfile.setAccountNumber(instructorDTO.getAccountNumber());
+            instructorProfile.setRoutingNumber(instructorDTO.getRoutingNumber());
+            instructorProfile.setAccountHolderName(instructorDTO.getAccountHolderName());
+            
+            instructorProfileService.updateInstructorProfile(savedInstructor.getInstructorId(), instructorProfile);
 
-        // Auto-assign to faculty Free Tier
-        SubscriptionRequestDTO subscriptionRequest = new SubscriptionRequestDTO();
-        subscriptionRequest.setPlanId(6L);
-        subscriptionRequest.setDurationMonths(1);
-        subscriptionRequest.setAutoRenew(false);
-        subscriptionRequest.setPaymentReference("auto_assigned_faculty_plan");
+            // Auto-assign to faculty Free Tier
+            SubscriptionRequestDTO subscriptionRequest = new SubscriptionRequestDTO();
+            subscriptionRequest.setPlanId(6L);
+            subscriptionRequest.setDurationMonths(1);
+            subscriptionRequest.setAutoRenew(false);
+            subscriptionRequest.setPaymentReference("auto_assigned_faculty_plan");
 
-        subscriptionService.subscribeUser(newUser.getId(), subscriptionRequest);
+            subscriptionService.subscribeUser(newUser.getId(), subscriptionRequest);
+            
+        } catch (DuplicateEmailException e) {
+            throw e; // Re-throw custom exception
+            
+        } catch (DataIntegrityViolationException e) {
+            LOGGER.severe("Database constraint violation during instructor registration: " + e.getMessage());
+            String constraintMessage = handleDatabaseConstraintViolation(e);
+            throw new RuntimeException(constraintMessage);
+            
+        } catch (Exception e) {
+            LOGGER.severe("Unexpected error during instructor registration: " + e.getMessage());
+            throw new RuntimeException("An unexpected error occurred during instructor registration. Please try again.");
+        }
     }
 }

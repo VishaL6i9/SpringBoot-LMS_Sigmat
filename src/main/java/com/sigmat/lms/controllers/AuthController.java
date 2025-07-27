@@ -5,11 +5,14 @@ import com.sigmat.lms.dtos.PasswordResetDTO;
 import com.sigmat.lms.dtos.PasswordResetRequestDTO;
 import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.dtos.InstructorRegistrationDTO;
+import com.sigmat.lms.exceptions.DuplicateEmailException;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.services.JwtService;
 import com.sigmat.lms.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -63,28 +66,43 @@ public class AuthController {
     }
 
     @PostMapping("/register/user")
-    public ResponseEntity<?> register(@RequestBody Users newUser ) {
+    public ResponseEntity<?> register(@RequestBody Users newUser) {
         Users userToSave = new Users();
 
-        userToSave.setUsername(newUser .getUsername());
-        userToSave.setPassword(newUser .getPassword());
-        userToSave.setEmail(newUser .getEmail());
-        userToSave.setFirstName(newUser .getFirstName());
-        userToSave.setLastName(newUser .getLastName());
+        userToSave.setUsername(newUser.getUsername());
+        userToSave.setPassword(newUser.getPassword());
+        userToSave.setEmail(newUser.getEmail());
+        userToSave.setFirstName(newUser.getFirstName());
+        userToSave.setLastName(newUser.getLastName());
 
         userToSave.getRoles().clear();
-        if (newUser .getRoles() != null && !newUser .getRoles().isEmpty()) {
-            userToSave.getRoles().addAll(newUser .getRoles());
+        if (newUser.getRoles() != null && !newUser.getRoles().isEmpty()) {
+            userToSave.getRoles().addAll(newUser.getRoles());
         } else {
             userToSave.getRoles().add(Role.USER);
         }
 
         try {
-            userService.saveUser (userToSave);
-            return ResponseEntity.ok().body("User  registered successfully!");
+            userService.saveUser(userToSave);
+            return ResponseEntity.ok().body("User registered successfully!");
+            
+        } catch (DataIntegrityViolationException e) {
+            String errorMessage = handleDatabaseConstraintViolation(e);
+            LOGGER.warning("Database constraint violation during user registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorMessage);
+            
+        } catch (DuplicateEmailException e) {
+            LOGGER.warning("Duplicate email registration attempt: " + newUser.getEmail());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            
+        } catch (IllegalArgumentException e) {
+            LOGGER.warning("Invalid user registration data: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid input: " + e.getMessage());
+            
         } catch (Exception e) {
-            LOGGER.severe("Registration failed: " + e.getMessage());
-            return ResponseEntity.status(400).body("Registration failed: " + e.getMessage());
+            LOGGER.severe("Unexpected error during user registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("An unexpected error occurred. Please try again later.");
         }
     }
 
@@ -93,9 +111,24 @@ public class AuthController {
         try {
             userService.registerInstructor(instructorDTO);
             return ResponseEntity.ok().body("Instructor registered successfully!");
+            
+        } catch (DataIntegrityViolationException e) {
+            String errorMessage = handleDatabaseConstraintViolation(e);
+            LOGGER.warning("Database constraint violation during instructor registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorMessage);
+            
+        } catch (DuplicateEmailException e) {
+            LOGGER.warning("Duplicate email registration attempt: " + instructorDTO.getEmail());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            
+        } catch (IllegalArgumentException e) {
+            LOGGER.warning("Invalid instructor registration data: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid input: " + e.getMessage());
+            
         } catch (Exception e) {
-            LOGGER.severe("Instructor registration failed: " + e.getMessage());
-            return ResponseEntity.status(400).body("Instructor registration failed: " + e.getMessage());
+            LOGGER.severe("Unexpected error during instructor registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("An unexpected error occurred. Please try again later.");
         }
     }
 
@@ -172,5 +205,29 @@ public class AuthController {
             LOGGER.severe("Password reset failed: " + e.getMessage());
             return ResponseEntity.status(400).body("Password reset failed: " + e.getMessage());
         }
+    }
+
+    private String handleDatabaseConstraintViolation(DataIntegrityViolationException e) {
+        String errorMessage = e.getMessage();
+        
+        if (errorMessage != null) {
+            if (errorMessage.contains("users_email_key") || 
+                errorMessage.contains("duplicate key value violates unique constraint") && 
+                errorMessage.contains("email")) {
+                return "This email address is already registered in our system.";
+            }
+            
+            if (errorMessage.contains("users_username_key") || 
+                errorMessage.contains("username")) {
+                return "This username is already taken. Please choose a different username.";
+            }
+            
+            if (errorMessage.contains("instructors_phone_key") || 
+                errorMessage.contains("phone")) {
+                return "This phone number is already registered. Please use a different phone number.";
+            }
+        }
+        
+        return "This information is already registered in our system. Please check your details.";
     }
 }

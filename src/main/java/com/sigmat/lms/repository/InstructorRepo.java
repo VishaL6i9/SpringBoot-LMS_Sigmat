@@ -11,5 +11,11 @@ public interface InstructorRepo extends JpaRepository<Instructor, Long> {
     Optional<Instructor> findByInstructorId(Long instructorId);
     Optional<Instructor> findByUser_Id(Long userId);
     Instructor findByUser(Users user);
+    
+    boolean existsByEmail(String email);
+    boolean existsByPhoneNo(String phoneNo);
+    boolean existsByUser(Users user);
+    Optional<Instructor> findByEmail(String email);
+    Optional<Instructor> findByPhoneNo(String phoneNo);
 }
 
