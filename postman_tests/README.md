@@ -13,7 +13,13 @@ Each `.md` file in this directory corresponds to a specific controller or a logi
 - `UserProfileController_Tests.md` - User profile management
 - `CourseController_Tests.md` - Course CRUD operations
 - `InstructorController_Tests.md` - Instructor management
+- `InstructorProfileController_Tests.md` - **NEW** Instructor profile management with social media
 - `LessonController_Tests.md` - Lesson management (polymorphic)
+
+### Administration & Security
+- `AdminController_Tests.md` - Admin operations (updated with SuperAdmin support)
+- `SuperAdminController_Tests.md` - **NEW** SuperAdmin exclusive operations
+- `DataLoader_Sample_Data_Tests.md` - **NEW** Sample data testing guide
 
 ### Subscription System
 - `SubscriptionController_Tests.md` - **UPDATED** with Stripe checkout integration
@@ -40,7 +46,33 @@ Each `.md` file in this directory corresponds to a specific controller or a logi
 - `ProfileImageController_Tests.md` - Profile image handling
 - `AdminController_Tests.md` - Admin operations
 
-## Recent Updates (v2.1.0)
+## Recent Updates (v2.2.0)
+
+### NEW: SuperAdmin Role System
+- **SuperAdminController_Tests.md** - Complete testing guide for SuperAdmin functionality
+- **Enhanced Authorization** - All controllers now support SuperAdmin role
+- **User Management** - SuperAdmin can promote/demote users and manage system
+- **System Administration** - Exclusive SuperAdmin endpoints for system stats and maintenance
+
+### NEW: Instructor Profile System
+- **InstructorProfileController_Tests.md** - Dedicated instructor profile management
+- **Social Media Integration** - Facebook, LinkedIn, YouTube handle support
+- **Banking Information** - Secure storage of instructor payment details
+- **Profile Images** - Upload and manage instructor profile pictures
+- **Detached System** - Independent from UserProfile for better organization
+
+### NEW: Sample Data System
+- **DataLoader_Sample_Data_Tests.md** - Complete guide for testing with sample data
+- **Pre-configured Users** - SuperAdmin, Admin, Instructor, and User accounts
+- **Sample Course Data** - Ready-to-use course with modules and lessons
+- **Role Testing** - Easy testing of role hierarchy and permissions
+
+### UPDATED: Enhanced Authorization
+- All existing controllers now support SuperAdmin role
+- Improved role hierarchy (SuperAdmin > Admin > Instructor > User)
+- Better security validation and access control
+
+## Previous Updates (v2.1.0)
 
 ### NEW: Stripe Checkout Integration
 - **StripeCheckoutIntegration_Tests.md** - Comprehensive testing guide for new Stripe checkout flow
