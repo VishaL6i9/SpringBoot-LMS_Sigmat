@@ -49,7 +49,7 @@ public class SubscriptionController {
     }
 
     @PostMapping("/users/{userId}/subscribe")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<UserSubscriptionDTO> subscribeUser(
             @PathVariable Long userId,
             @RequestBody SubscriptionRequestDTO request) {
@@ -60,14 +60,14 @@ public class SubscriptionController {
 
 
     @GetMapping("/users/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<List<UserSubscriptionDTO>> getUserSubscriptions(@PathVariable Long userId) {
         List<UserSubscriptionDTO> subscriptions = subscriptionService.getUserSubscriptions(userId);
         return ResponseEntity.ok(subscriptions);
     }
 
     @GetMapping("/users/{userId}/current")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<UserSubscriptionDTO> getCurrentSubscription(@PathVariable Long userId) {
         UserSubscriptionDTO subscription = subscriptionService.getCurrentSubscription(userId);
         if (subscription != null) {
@@ -79,14 +79,14 @@ public class SubscriptionController {
 
 
     @PutMapping("/{subscriptionId}/cancel")
-    @PreAuthorize("hasRole('ADMIN') or @subscriptionService.isSubscriptionOwner(#subscriptionId, authentication.principal.id)")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or @subscriptionService.isSubscriptionOwner(#subscriptionId, authentication.principal.id)")
     public ResponseEntity<Void> cancelSubscription(@PathVariable Long subscriptionId) {
         subscriptionService.cancelSubscription(subscriptionId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/expire-subscriptions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<Void> expireSubscriptions() {
         subscriptionService.expireSubscriptions();
         return ResponseEntity.ok().build();
@@ -95,7 +95,7 @@ public class SubscriptionController {
     // Checkout Session Endpoints
 
     @PostMapping("/users/{userId}/checkout")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<?> createPlatformSubscriptionCheckout(
             @PathVariable Long userId,
             @RequestBody CheckoutSessionDTO request) {

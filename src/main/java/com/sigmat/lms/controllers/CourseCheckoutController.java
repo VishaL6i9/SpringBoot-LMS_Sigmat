@@ -24,7 +24,7 @@ public class CourseCheckoutController {
     private final StripeService stripeService;
 
     @PostMapping("/{courseId}/users/{userId}/checkout")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<?> createCourseCheckout(
             @PathVariable Long courseId,
             @PathVariable Long userId,
@@ -99,7 +99,7 @@ public class CourseCheckoutController {
     }
 
     @GetMapping("/{courseId}/users/{userId}/purchase")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<CoursePurchaseDTO> getUserCoursePurchase(
             @PathVariable Long courseId,
             @PathVariable Long userId) {
@@ -109,7 +109,7 @@ public class CourseCheckoutController {
     }
 
     @GetMapping("/{courseId}/users/{userId}/has-purchased")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<Map<String, Boolean>> hasUserPurchasedCourse(
             @PathVariable Long courseId,
             @PathVariable Long userId) {
@@ -120,21 +120,21 @@ public class CourseCheckoutController {
     }
 
     @GetMapping("/users/{userId}/purchases")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<List<CoursePurchaseDTO>> getUserPurchases(@PathVariable Long userId) {
         List<CoursePurchaseDTO> purchases = coursePurchaseService.getUserPurchases(userId);
         return ResponseEntity.ok(purchases);
     }
 
     @GetMapping("/{courseId}/purchases")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<List<CoursePurchaseDTO>> getCoursePurchases(@PathVariable Long courseId) {
         List<CoursePurchaseDTO> purchases = coursePurchaseService.getCoursePurchases(courseId);
         return ResponseEntity.ok(purchases);
     }
 
     @GetMapping("/{courseId}/revenue")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Map<String, Object>> getCourseRevenue(@PathVariable Long courseId) {
         Long revenue = coursePurchaseService.getCourseRevenue(courseId);
         Long enrollmentCount = coursePurchaseService.getCourseEnrollmentCount(courseId);

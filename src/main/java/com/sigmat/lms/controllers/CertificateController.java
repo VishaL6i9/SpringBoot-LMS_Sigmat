@@ -127,7 +127,7 @@ public class CertificateController {
 
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<Void> deleteCertificate(@PathVariable Long id) {
         certificateService.deleteCertificate(id);
         return ResponseEntity.noContent().build();

@@ -54,7 +54,7 @@ public class VideoController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<?> deleteVideo(@PathVariable Long id) {
         try {
             videoService.deleteVideo(id);

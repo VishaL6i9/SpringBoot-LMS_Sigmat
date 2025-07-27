@@ -30,6 +30,21 @@ public enum Role {
             INSTRUCTOR_CREATE,
             INSTRUCTOR_UPDATE,
             INSTRUCTOR_DELETE
+    )),
+    SUPER_ADMIN(Set.of(
+            ADMIN_READ,
+            ADMIN_CREATE,
+            ADMIN_UPDATE,
+            ADMIN_DELETE,
+            INSTRUCTOR_READ,
+            INSTRUCTOR_CREATE,
+            INSTRUCTOR_UPDATE,
+            INSTRUCTOR_DELETE,
+            SUPER_ADMIN_READ,
+            SUPER_ADMIN_CREATE,
+            SUPER_ADMIN_UPDATE,
+            SUPER_ADMIN_DELETE,
+            SUPER_ADMIN_OWNER
     ));
 
     private final Set<Permission> permissions;
@@ -46,5 +61,13 @@ public enum Role {
 
     public boolean hasPermission(Permission permission) {
         return permissions.contains(permission);
+    }
+
+    public boolean isSuperAdmin() {
+        return this == SUPER_ADMIN;
+    }
+
+    public boolean hasOwnerAccess() {
+        return this == SUPER_ADMIN && permissions.contains(SUPER_ADMIN_OWNER);
     }
 }

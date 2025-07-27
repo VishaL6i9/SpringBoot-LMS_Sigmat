@@ -13,7 +13,12 @@ public enum Permission {
     INSTRUCTOR_READ("instructor:read"),
     INSTRUCTOR_CREATE("instructor:create"),
     INSTRUCTOR_UPDATE("instructor:update"),
-    INSTRUCTOR_DELETE("instructor:delete");
+    INSTRUCTOR_DELETE("instructor:delete"),
+    SUPER_ADMIN_READ("super_admin:read"),
+    SUPER_ADMIN_CREATE("super_admin:create"),
+    SUPER_ADMIN_UPDATE("super_admin:update"),
+    SUPER_ADMIN_DELETE("super_admin:delete"),
+    SUPER_ADMIN_OWNER("super_admin:owner");
 
     private final String permission;
 

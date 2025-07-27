@@ -23,7 +23,7 @@ public class InstructorController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<Instructor> createInstructor(@RequestBody Instructor instructor) {
         try {
             Instructor savedInstructor = instructorService.saveInstructor(instructor);
@@ -34,14 +34,14 @@ public class InstructorController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'INSTRUCTOR', 'USER')")
     public ResponseEntity<List<Instructor>> getAllInstructors() {
         List<Instructor> instructors = instructorService.getAllInstructors();
         return new ResponseEntity<>(instructors, HttpStatus.OK);
     }
 
     @GetMapping("/{instructorId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'INSTRUCTOR', 'USER')")
     public ResponseEntity<Instructor> getInstructorById(@PathVariable Long instructorId) {
         Optional<Instructor> instructor = instructorService.getInstructorById(instructorId);
         return instructor.map(ResponseEntity::ok)
@@ -49,7 +49,7 @@ public class InstructorController {
     }
 
     @PutMapping("/{instructorId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<Instructor> updateInstructor(@PathVariable Long instructorId, @RequestBody Instructor instructorDetails) {
         // For update, we need to ensure the ID in the path matches the ID in the body if present
         if (instructorDetails.getInstructorId() == null || !instructorDetails.getInstructorId().equals(instructorId)) {
@@ -64,7 +64,7 @@ public class InstructorController {
     }
 
     @DeleteMapping("/{instructorId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<Void> deleteInstructor(@PathVariable Long instructorId) {
         try {
             instructorService.deleteInstructor(instructorId);

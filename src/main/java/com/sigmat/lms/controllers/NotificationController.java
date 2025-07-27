@@ -35,33 +35,33 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userId == authentication.principal.id or hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<List<NotificationDTO>> getUserNotifications(@PathVariable Long userId) {
         return ResponseEntity.ok(notificationService.getUserNotifications(userId));
     }
 
     @GetMapping("/user/{userId}/unread")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userId == authentication.principal.id or hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<List<NotificationDTO>> getUnreadNotifications(@PathVariable Long userId) {
         return ResponseEntity.ok(notificationService.getUnreadNotifications(userId));
     }
 
     @PutMapping("/{id}/read")
-    @PreAuthorize("@notificationService.getNotificationById(#id).user.id == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("@notificationService.getNotificationById(#id).user.id == authentication.principal.id or hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
         notificationService.markAsRead(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/user/{userId}/read-all")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userId == authentication.principal.id or hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<Void> markAllAsRead(@PathVariable Long userId) {
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/user/{userId}/stats")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#userId == authentication.principal.id or hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<NotificationStatsDTO> getNotificationStats(@PathVariable Long userId) {
         return ResponseEntity.ok(notificationService.getNotificationStats(userId));
     }

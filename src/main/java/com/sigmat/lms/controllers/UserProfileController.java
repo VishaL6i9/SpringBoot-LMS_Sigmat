@@ -44,7 +44,7 @@ public class UserProfileController {
         String username = jwtService.extractUserName(jwt);
         Users user = userService.findByUsername(username);
         if (user != null) {
-            if (user.getRoles().contains(Role.ADMIN)) {
+            if (user.getRoles().contains(Role.SUPER_ADMIN) || user.getRoles().contains(Role.ADMIN)) {
                 return true;
             }
             return user.getId().equals(resourceUserId);
