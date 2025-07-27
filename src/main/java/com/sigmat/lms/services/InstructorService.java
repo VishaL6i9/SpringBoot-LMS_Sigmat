@@ -1,6 +1,7 @@
 package com.sigmat.lms.services;
 
 import com.sigmat.lms.models.Instructor;
+import com.sigmat.lms.models.Users;
 import com.sigmat.lms.repository.InstructorRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,4 +31,11 @@ public class InstructorService {
         return instructorRepo.findByInstructorId(instructorId);
     }
 
+    public Instructor getInstructorByUser(Users user) {
+        return instructorRepo.findByUser(user);
+    }
+
+    public Optional<Instructor> getInstructorByUserId(Long userId) {
+        return instructorRepo.findByUser_Id(userId);
+    }
 }
