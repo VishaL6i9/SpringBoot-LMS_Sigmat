@@ -1,11 +1,11 @@
 ### 3. UserProfileController Tests (`/api/user`)
 
-**All endpoints in this controller require a valid JWT token in the `Authorization` header.** The server will programmatically check if the user is an `ADMIN` or is accessing their own resource.
+**All endpoints in this controller require a valid JWT token in the `Authorization` header.** The server will programmatically check if the user is a `SUPER_ADMIN`, `ADMIN`, or is accessing their own resource.
 
 *   **Get User Profile by ID**
     *   **Endpoint:** `/api/user/profile/{userID}`
     *   **Method:** `GET`
-    *   **Required Role:** `ADMIN` or Owner
+    *   **Required Role:** `SUPER_ADMIN`, `ADMIN`, or Owner
     *   **Expected Status (Admin or Owner):** `200 OK`
     *   **Sample Response Body (JSON):**
         ```json
