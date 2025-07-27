@@ -7,6 +7,7 @@ import com.sigmat.lms.dtos.InstructorRegistrationDTO;
 import com.sigmat.lms.dtos.SubscriptionRequestDTO;
 import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.models.Instructor;
+import com.sigmat.lms.models.InstructorProfile;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.UserProfile;
 import com.sigmat.lms.models.Users;
@@ -37,13 +38,14 @@ public class UserService {
     private final EmailService emailService; 
     private final EnrollmentService enrollmentService; // Inject EnrollmentService
     private final InstructorService instructorService; // Inject InstructorService
+    private final InstructorProfileService instructorProfileService; // Inject InstructorProfileService
     private final SubscriptionService subscriptionService; // Inject SubscriptionService
     private PasswordEncoder passwordEncoder;
     private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
 
     private final Set<String> invalidatedTokens = new HashSet<>();
 
-    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService, PasswordEncoder passwordEncoder, EnrollmentService enrollmentService, InstructorService instructorService, SubscriptionService subscriptionService) {
+    public UserService(UserRepo userRepository, UserProfileRepo userProfileRepository, JwtService jwtUtil, EmailService emailService, PasswordEncoder passwordEncoder, EnrollmentService enrollmentService, InstructorService instructorService, InstructorProfileService instructorProfileService, SubscriptionService subscriptionService) {
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
         this.jwtUtil = jwtUtil;
@@ -51,6 +53,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
         this.enrollmentService = enrollmentService; // Initialize EnrollmentService
         this.instructorService = instructorService; // Initialize InstructorService
+        this.instructorProfileService = instructorProfileService; // Initialize InstructorProfileService
         this.subscriptionService = subscriptionService; // Initialize SubscriptionService
     }
 
@@ -268,6 +271,62 @@ public class UserService {
         }
     }
 
+    public List<UserDTO> getUsersByRole(Role role) {
+        List<Users> users = userRepository.findAll().stream()
+                .filter(user -> user.getRoles().contains(role))
+                .toList();
+        
+        List<UserDTO> userDTOs = new ArrayList<>();
+        for (Users user : users) {
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setUsername(user.getUsername());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setFirstName(user.getFirstName());
+            userDTO.setLastName(user.getLastName());
+            userDTO.setRoles(user.getRoles());
+            userDTOs.add(userDTO);
+        }
+        return userDTOs;
+    }
+
+    public void deleteUserById(Long userId) {
+        if (userRepository.existsById(userId)) {
+            userRepository.deleteById(userId);
+        } else {
+            throw new RuntimeException("User not found with id: " + userId);
+        }
+    }
+
+    public Map<String, Object> getSystemStats() {
+        long totalUsers = userRepository.count();
+        long adminCount = userRepository.findAll().stream()
+                .mapToLong(user -> user.getRoles().contains(Role.ADMIN) ? 1 : 0)
+                .sum();
+        long superAdminCount = userRepository.findAll().stream()
+                .mapToLong(user -> user.getRoles().contains(Role.SUPER_ADMIN) ? 1 : 0)
+                .sum();
+        long instructorCount = userRepository.findAll().stream()
+                .mapToLong(user -> user.getRoles().contains(Role.INSTRUCTOR) ? 1 : 0)
+                .sum();
+        long regularUserCount = userRepository.findAll().stream()
+                .mapToLong(user -> user.getRoles().contains(Role.USER) && 
+                                  !user.getRoles().contains(Role.ADMIN) && 
+                                  !user.getRoles().contains(Role.SUPER_ADMIN) && 
+                                  !user.getRoles().contains(Role.INSTRUCTOR) ? 1 : 0)
+                .sum();
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUsers", totalUsers);
+        stats.put("adminCount", adminCount);
+        stats.put("superAdminCount", superAdminCount);
+        stats.put("instructorCount", instructorCount);
+        stats.put("regularUserCount", regularUserCount);
+        stats.put("timestamp", java.time.LocalDateTime.now());
+        
+        return stats;
+    }
+
     public List<EnrollmentDTO> getUserEnrollments(Long userId) {
         return enrollmentService.getEnrollmentsByUserId(userId);
     }
@@ -326,13 +385,20 @@ public class UserService {
         instructor.setLastName(instructorDTO.getLastName());
         instructor.setEmail(instructorDTO.getEmail());
         instructor.setPhoneNo(instructorDTO.getPhoneNo());
-        instructor.setBankName(instructorDTO.getBankName());
-        instructor.setAccountNumber(instructorDTO.getAccountNumber());
-        instructor.setRoutingNumber(instructorDTO.getRoutingNumber());
-        instructor.setAccountHolderName(instructorDTO.getAccountHolderName());
         instructor.setDateOfJoining(java.time.LocalDate.now());
 
-        instructorService.saveInstructor(instructor);
+        Instructor savedInstructor = instructorService.saveInstructor(instructor);
+
+        // Create instructor profile
+        InstructorProfile instructorProfile = instructorProfileService.createInstructorProfile(savedInstructor.getInstructorId());
+        
+        // Update profile with banking information
+        instructorProfile.setBankName(instructorDTO.getBankName());
+        instructorProfile.setAccountNumber(instructorDTO.getAccountNumber());
+        instructorProfile.setRoutingNumber(instructorDTO.getRoutingNumber());
+        instructorProfile.setAccountHolderName(instructorDTO.getAccountHolderName());
+        
+        instructorProfileService.updateInstructorProfile(savedInstructor.getInstructorId(), instructorProfile);
 
         // Auto-assign to faculty Free Tier
         SubscriptionRequestDTO subscriptionRequest = new SubscriptionRequestDTO();
