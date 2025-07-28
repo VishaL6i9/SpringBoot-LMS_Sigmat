@@ -45,4 +45,14 @@ public class Course {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institute_id")
     private Institute institute;
+
+    // Course access scope
+    @Enumerated(EnumType.STRING)
+    @Column(name = "course_scope")
+    @Builder.Default
+    private CourseScope courseScope = CourseScope.INSTITUTE_ONLY;
+
+    // Institute subscriptions for global courses
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<InstituteSubscription> instituteSubscriptions;
 }

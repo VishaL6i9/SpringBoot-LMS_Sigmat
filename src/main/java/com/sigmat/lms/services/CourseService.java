@@ -20,11 +20,13 @@ public class CourseService {
 
     private final CourseRepo courseRepo;
     private final InstructorRepo instructorRepo; // Inject InstructorRepo
+    private final CourseAccessControlService courseAccessControlService;
 
     @Autowired
-    public CourseService(CourseRepo courseRepo, InstructorRepo instructorRepo) {
+    public CourseService(CourseRepo courseRepo, InstructorRepo instructorRepo, CourseAccessControlService courseAccessControlService) {
         this.courseRepo = courseRepo;
         this.instructorRepo = instructorRepo;
+        this.courseAccessControlService = courseAccessControlService;
     }
 
     
@@ -44,7 +46,10 @@ public class CourseService {
                 course.getMaxEnrollments(),
                 course.getCourseFee(),
                 course.getLanguage(),
-                course.getCourseCategory()
+                course.getCourseCategory(),
+                course.getCourseScope() != null ? course.getCourseScope().name() : "INSTITUTE_ONLY",
+                course.getInstitute() != null ? course.getInstitute().getInstituteId() : null,
+                course.getInstitute() != null ? course.getInstitute().getInstituteName() : null
         );
     }
 
@@ -131,6 +136,22 @@ public class CourseService {
         } else {
             return List.of(); // Return an empty list if no instructor found for the user ID
         }
+    }
+
+    /**
+     * Get courses accessible to a specific user based on institute access control
+     */
+    public List<CourseDTO> getAccessibleCoursesByUserId(Long userId) {
+        return courseAccessControlService.getAccessibleCourses(userId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Check if a user can access a specific course
+     */
+    public boolean canUserAccessCourse(Long userId, Long courseId) {
+        return courseAccessControlService.canUserAccessCourse(userId, courseId);
     }
 
 }

@@ -82,4 +82,18 @@ public class CourseController {
             return ResponseEntity.ok(courses);
         }
     }
+
+    @GetMapping("/user/{userId}/accessible")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER') and (hasRole('SUPER_ADMIN') or authentication.principal.id == #userId)")
+    public ResponseEntity<List<CourseDTO>> getAccessibleCoursesByUserId(@PathVariable Long userId) {
+        List<CourseDTO> courses = courseService.getAccessibleCoursesByUserId(userId);
+        return ResponseEntity.ok(courses);
+    }
+
+    @GetMapping("/user/{userId}/course/{courseId}/access")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'USER') and (hasRole('SUPER_ADMIN') or authentication.principal.id == #userId)")
+    public ResponseEntity<Boolean> checkUserCourseAccess(@PathVariable Long userId, @PathVariable Long courseId) {
+        boolean hasAccess = courseService.canUserAccessCourse(userId, courseId);
+        return ResponseEntity.ok(hasAccess);
+    }
 }
