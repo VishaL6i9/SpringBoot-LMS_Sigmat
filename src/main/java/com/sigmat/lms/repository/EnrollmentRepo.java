@@ -1,8 +1,8 @@
 package com.sigmat.lms.repository;
 
+import com.sigmat.lms.models.Course;
 import com.sigmat.lms.models.Enrollment;
 import com.sigmat.lms.models.Users;
-import com.sigmat.lms.models.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

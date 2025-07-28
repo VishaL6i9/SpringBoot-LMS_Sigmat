@@ -1,7 +1,6 @@
 package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.dtos.UserDTO;
-import com.sigmat.lms.models.Users;
 import com.sigmat.lms.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

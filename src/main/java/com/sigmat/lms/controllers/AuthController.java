@@ -1,10 +1,6 @@
 package com.sigmat.lms.controllers;
 
-import com.sigmat.lms.dtos.LoginRequestDTO;
-import com.sigmat.lms.dtos.PasswordResetDTO;
-import com.sigmat.lms.dtos.PasswordResetRequestDTO;
-import com.sigmat.lms.dtos.UserDTO;
-import com.sigmat.lms.dtos.InstructorRegistrationDTO;
+import com.sigmat.lms.dtos.*;
 import com.sigmat.lms.exceptions.DuplicateEmailException;
 import com.sigmat.lms.models.Role;
 import com.sigmat.lms.models.Users;

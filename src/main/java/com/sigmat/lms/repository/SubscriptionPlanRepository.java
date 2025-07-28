@@ -1,9 +1,9 @@
 package com.sigmat.lms.repository;
 
+import com.sigmat.lms.models.FacultyPlanTier;
+import com.sigmat.lms.models.LearnerPlanTier;
 import com.sigmat.lms.models.SubscriptionPlan;
 import com.sigmat.lms.models.SubscriptionPlanType;
-import com.sigmat.lms.models.LearnerPlanTier;
-import com.sigmat.lms.models.FacultyPlanTier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

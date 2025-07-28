@@ -1,6 +1,5 @@
 package com.sigmat.lms.services;
 
-import com.sigmat.lms.exceptions.DuplicateEmailException;
 import com.sigmat.lms.models.Instructor;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.repository.InstructorRepo;
