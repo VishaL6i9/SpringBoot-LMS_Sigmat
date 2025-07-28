@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Data
@@ -55,6 +54,7 @@ public class Institute {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean isActive = true;
 
@@ -77,6 +77,11 @@ public class Institute {
     @JsonIgnore
     @OneToMany(mappedBy = "institute", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Course> courses;
+
+    // Global course subscriptions
+    @JsonIgnore
+    @OneToMany(mappedBy = "institute", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<InstituteSubscription> courseSubscriptions;
 
     @PrePersist
     protected void onCreate() {

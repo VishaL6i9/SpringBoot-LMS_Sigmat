@@ -200,7 +200,10 @@ public class InstituteManagementService {
                 course.getMaxEnrollments(),
                 course.getCourseFee(),
                 course.getLanguage(),
-                course.getCourseCategory()
+                course.getCourseCategory(),
+                course.getCourseScope() != null ? course.getCourseScope().name() : "INSTITUTE_ONLY",
+                course.getInstitute() != null ? course.getInstitute().getInstituteId() : null,
+                course.getInstitute() != null ? course.getInstitute().getInstituteName() : null
         );
     }
 
