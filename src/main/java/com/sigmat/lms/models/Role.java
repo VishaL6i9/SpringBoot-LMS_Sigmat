@@ -31,6 +31,20 @@ public enum Role {
             INSTRUCTOR_UPDATE,
             INSTRUCTOR_DELETE
     )),
+    INSTITUTION(Set.of(
+            INSTITUTION_READ,
+            INSTITUTION_CREATE,
+            INSTITUTION_UPDATE,
+            INSTITUTION_DELETE,
+            ADMIN_READ,
+            ADMIN_CREATE,
+            ADMIN_UPDATE,
+            ADMIN_DELETE,
+            INSTRUCTOR_READ,
+            INSTRUCTOR_CREATE,
+            INSTRUCTOR_UPDATE,
+            INSTRUCTOR_DELETE
+    )),
     SUPER_ADMIN(Set.of(
             ADMIN_READ,
             ADMIN_CREATE,
@@ -40,6 +54,10 @@ public enum Role {
             INSTRUCTOR_CREATE,
             INSTRUCTOR_UPDATE,
             INSTRUCTOR_DELETE,
+            INSTITUTION_READ,
+            INSTITUTION_CREATE,
+            INSTITUTION_UPDATE,
+            INSTITUTION_DELETE,
             SUPER_ADMIN_READ,
             SUPER_ADMIN_CREATE,
             SUPER_ADMIN_UPDATE,

@@ -40,4 +40,9 @@ public class Course {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<CourseModule> modules;
+
+    // Institute relationship - courses belong to an institute
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institute_id")
+    private Institute institute;
 }

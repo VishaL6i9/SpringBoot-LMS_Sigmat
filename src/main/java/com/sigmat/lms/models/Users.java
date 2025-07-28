@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -61,6 +60,11 @@ public class Users {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UserSubscription> subscriptions;
+
+    // Institute relationship - for students and institute admins
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institute_id")
+    private Institute institute;
 
     @PrePersist
     public void prePersist() {

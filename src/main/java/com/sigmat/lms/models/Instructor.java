@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.Objects;
 
 @Data
 @Builder
@@ -36,6 +35,10 @@ public class Instructor {
     @JoinColumn(name = "user_id", unique = true)
     private Users user;
 
+    // Institute relationship - instructors belong to an institute
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institute_id")
+    private Institute institute;
     
     //@Column
     //private List<Course> assignedCourses;

@@ -1,9 +1,9 @@
 package com.sigmat.lms.repository;
 
-import com.sigmat.lms.models.CoursePurchase;
 import com.sigmat.lms.models.Course;
-import com.sigmat.lms.models.Users;
+import com.sigmat.lms.models.CoursePurchase;
 import com.sigmat.lms.models.PurchaseStatus;
+import com.sigmat.lms.models.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
