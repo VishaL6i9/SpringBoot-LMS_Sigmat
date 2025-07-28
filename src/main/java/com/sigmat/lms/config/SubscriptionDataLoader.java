@@ -1,6 +1,9 @@
 package com.sigmat.lms.config;
 
-import com.sigmat.lms.models.*;
+import com.sigmat.lms.models.FacultyPlanTier;
+import com.sigmat.lms.models.LearnerPlanTier;
+import com.sigmat.lms.models.SubscriptionPlan;
+import com.sigmat.lms.models.SubscriptionPlanType;
 import com.sigmat.lms.repository.SubscriptionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -8,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
