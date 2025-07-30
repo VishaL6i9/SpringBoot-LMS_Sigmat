@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -129,16 +130,87 @@ public class AuthController {
     }
 
     @PostMapping("/register/batch")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('INSTITUTION')")
     public ResponseEntity<?> registerBatch(@RequestParam("file") MultipartFile file) {
-
-        try {
-            List<Users> users = userService.processUserFileBatchCreate(file);
-            return ResponseEntity.ok().body(users.size());
-        } catch (Exception e) {
-            LOGGER.severe("Batch registration failed: " + e.getMessage());
-            return ResponseEntity.status(400).body("Batch registration failed: " + e.getMessage());
+        // Validate file input
+        if (file == null || file.isEmpty()) {
+            LOGGER.warning("Batch registration attempted with empty file");
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "File is required and cannot be empty"
+            ));
         }
 
+        // Validate file type
+        String filename = file.getOriginalFilename();
+        if (filename == null || (!filename.toLowerCase().endsWith(".csv") && 
+            !filename.toLowerCase().endsWith(".xlsx") && 
+            !filename.toLowerCase().endsWith(".xls"))) {
+            LOGGER.warning("Batch registration attempted with invalid file type: " + filename);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Invalid file type. Please upload a CSV or Excel file (.csv, .xlsx, .xls)"
+            ));
+        }
+
+        // Validate file size (10MB limit)
+        if (file.getSize() > 10 * 1024 * 1024) {
+            LOGGER.warning("Batch registration attempted with file too large: " + file.getSize() + " bytes");
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "File size exceeds 10MB limit"
+            ));
+        }
+
+        try {
+            LOGGER.info("Starting batch user registration with file: " + filename);
+            UserService.BatchProcessResult result = userService.processUserFileBatchCreate(file);
+            
+            // Prepare response based on results
+            Map<String, Object> response = new HashMap<>();
+            response.put("filename", filename);
+            response.put("totalProcessed", result.getSuccessCount() + result.getErrorCount());
+            response.put("successCount", result.getSuccessCount());
+            response.put("errorCount", result.getErrorCount());
+            
+            if (result.hasErrors()) {
+                response.put("success", result.getSuccessCount() > 0); // Partial success if some users created
+                response.put("message", result.getSuccessCount() > 0 ? 
+                    "Batch registration completed with some errors" : 
+                    "Batch registration failed - no users were created");
+                response.put("errors", result.getErrors());
+                
+                // Return appropriate status code
+                HttpStatus status = result.getSuccessCount() > 0 ? 
+                    HttpStatus.PARTIAL_CONTENT : HttpStatus.BAD_REQUEST;
+                
+                LOGGER.warning("Batch registration completed with errors. Success: " + 
+                    result.getSuccessCount() + ", Errors: " + result.getErrorCount());
+                
+                return ResponseEntity.status(status).body(response);
+            } else {
+                response.put("success", true);
+                response.put("message", "All users registered successfully");
+                
+                LOGGER.info("Batch registration successful: " + result.getSuccessCount() + " users created");
+                return ResponseEntity.ok().body(response);
+            }
+
+        } catch (IllegalArgumentException e) {
+            LOGGER.warning("Invalid batch registration data: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Invalid file format or data: " + e.getMessage()
+            ));
+            
+        } catch (Exception e) {
+            LOGGER.severe("Unexpected error during batch registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "Batch registration failed due to an unexpected error. Please try again later.",
+                "error", e.getMessage()
+            ));
+        }
     }
 
     @PostMapping("/logout")

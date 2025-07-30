@@ -182,62 +182,310 @@ public class UserService {
         return invalidatedTokens.contains(token);
     }
 
-    public List<Users> processUserFileBatchCreate(MultipartFile file) {
-        List<Users> users = new ArrayList<>();
+    @Transactional
+    public BatchProcessResult processUserFileBatchCreate(MultipartFile file) {
+        List<Users> successfulUsers = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        Set<String> processedEmails = new HashSet<>();
+        Set<String> processedUsernames = new HashSet<>();
+        
         try {
-            if (file.getOriginalFilename().endsWith(".csv")) {
-                try (CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
-                    String[] values;
-
-                    while ((values = csvReader.readNext()) != null) {
-                        Users user = new Users();
-                        user.setUsername(values[0]);
-                        user.setPassword(values[1]);
-                        user.setEmail(values[2]);
-                        user.setFirstName(values[3]);
-                        user.setLastName(values[4]);
-                        user.getRoles().add(Role.USER);
-
-                        String verificationToken = UUID.randomUUID().toString();
-                        user.setVerificationToken(verificationToken);
-                        user.setVerified(false);
-
-                        users.add(user);
-                    }
-                }
-            } else if (file.getOriginalFilename().endsWith(".xlsx") || file.getOriginalFilename().endsWith(".xls")) {
-                try (InputStream inputStream = file.getInputStream()) {
-                    Workbook workbook = WorkbookFactory.create(inputStream);
-                    Sheet sheet = workbook.getSheetAt(0);
-
-                    for (Row row : sheet) {
-                        Users user = new Users();
-                        user.setUsername(row.getCell(0).getStringCellValue());
-                        user.setPassword(row.getCell(1).getStringCellValue());
-                        user.setEmail(row.getCell(2).getStringCellValue());
-                        user.setFirstName(row.getCell(3).getStringCellValue());
-                        user.setLastName(row.getCell(4).getStringCellValue());
-                        user.getRoles().add(Role.USER);
-
-                        String verificationToken = UUID.randomUUID().toString();
-                        user.setVerificationToken(verificationToken);
-                        user.setVerified(false);
-
-                        users.add(user);
-                    }
-                }
-            } else {
-                throw new IllegalArgumentException("Invalid file type. Please upload a CSV or Excel file.");
+            List<UserBatchData> userDataList = parseUserFile(file);
+            
+            if (userDataList.isEmpty()) {
+                throw new IllegalArgumentException("File contains no valid user data");
             }
-
-            for (Users user : users) {
-                saveUser(user);
+            
+            LOGGER.info("Processing batch of " + userDataList.size() + " users");
+            
+            for (int i = 0; i < userDataList.size(); i++) {
+                UserBatchData userData = userDataList.get(i);
+                int rowNumber = i + 1;
+                
+                try {
+                    // Validate user data
+                    String validationError = validateUserData(userData, rowNumber);
+                    if (validationError != null) {
+                        errors.add(validationError);
+                        continue;
+                    }
+                    
+                    // Check for duplicates within the batch
+                    if (processedEmails.contains(userData.email.toLowerCase())) {
+                        errors.add("Row " + rowNumber + ": Duplicate email within batch - " + userData.email);
+                        continue;
+                    }
+                    if (processedUsernames.contains(userData.username.toLowerCase())) {
+                        errors.add("Row " + rowNumber + ": Duplicate username within batch - " + userData.username);
+                        continue;
+                    }
+                    
+                    // Check for existing users in database
+                    if (userRepository.existsByEmail(userData.email)) {
+                        errors.add("Row " + rowNumber + ": Email already exists - " + userData.email);
+                        continue;
+                    }
+                    if (userRepository.existsByUsername(userData.username)) {
+                        errors.add("Row " + rowNumber + ": Username already exists - " + userData.username);
+                        continue;
+                    }
+                    
+                    // Create and save user using the existing saveUser method
+                    Users user = createUserFromBatchData(userData);
+                    saveUser(user); // This handles encoding, validation, profile creation, and email sending
+                    
+                    successfulUsers.add(user);
+                    processedEmails.add(userData.email.toLowerCase());
+                    processedUsernames.add(userData.username.toLowerCase());
+                    
+                    LOGGER.info("Successfully processed user: " + userData.username + " (row " + rowNumber + ")");
+                    
+                } catch (Exception e) {
+                    String errorMsg = "Row " + rowNumber + " (" + userData.username + "): " + e.getMessage();
+                    errors.add(errorMsg);
+                    LOGGER.warning("Failed to process user at row " + rowNumber + ": " + e.getMessage());
+                }
             }
+            
+            LOGGER.info("Batch processing completed. Success: " + successfulUsers.size() + ", Errors: " + errors.size());
+            return new BatchProcessResult(successfulUsers, errors);
+            
         } catch (Exception e) {
-            LOGGER.severe("Error processing user file: " + e.getMessage());
-            throw new RuntimeException("Failed to process user file: " + e.getMessage());
+            LOGGER.severe("Critical error during batch processing: " + e.getMessage());
+            throw new RuntimeException("Failed to process user file: " + e.getMessage(), e);
         }
-        return users;
+    }
+    
+    private List<UserBatchData> parseUserFile(MultipartFile file) throws IOException {
+        List<UserBatchData> userDataList = new ArrayList<>();
+        String filename = file.getOriginalFilename();
+        
+        if (filename == null) {
+            throw new IllegalArgumentException("File name is null");
+        }
+        
+        if (filename.toLowerCase().endsWith(".csv")) {
+            userDataList = parseCSVFile(file);
+        } else if (filename.toLowerCase().endsWith(".xlsx") || filename.toLowerCase().endsWith(".xls")) {
+            userDataList = parseExcelFile(file);
+        } else {
+            throw new IllegalArgumentException("Invalid file type. Please upload a CSV or Excel file.");
+        }
+        
+        return userDataList;
+    }
+    
+    private List<UserBatchData> parseCSVFile(MultipartFile file) throws IOException {
+        List<UserBatchData> userDataList = new ArrayList<>();
+        
+        try (CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
+            String[] values;
+            boolean isFirstRow = true;
+            
+            while ((values = csvReader.readNext()) != null) {
+                // Skip header row if it looks like headers
+                if (isFirstRow && isHeaderRow(values)) {
+                    isFirstRow = false;
+                    continue;
+                }
+                isFirstRow = false;
+                
+                // Skip empty rows
+                if (isEmptyRow(values)) {
+                    continue;
+                }
+                
+                if (values.length < 5) {
+                    continue; // Skip rows with insufficient data
+                }
+                
+                UserBatchData userData = new UserBatchData();
+                userData.username = trimToNull(values[0]);
+                userData.password = trimToNull(values[1]);
+                userData.email = trimToNull(values[2]);
+                userData.firstName = trimToNull(values[3]);
+                userData.lastName = trimToNull(values[4]);
+                
+                userDataList.add(userData);
+            }
+        } catch (CsvValidationException e) {
+            throw new IOException("Invalid CSV format: " + e.getMessage(), e);
+        }
+        
+        return userDataList;
+    }
+    
+    private List<UserBatchData> parseExcelFile(MultipartFile file) throws IOException {
+        List<UserBatchData> userDataList = new ArrayList<>();
+        
+        try (InputStream inputStream = file.getInputStream()) {
+            Workbook workbook = WorkbookFactory.create(inputStream);
+            Sheet sheet = workbook.getSheetAt(0);
+            
+            boolean isFirstRow = true;
+            
+            for (Row row : sheet) {
+                // Skip header row
+                if (isFirstRow) {
+                    isFirstRow = false;
+                    if (isExcelHeaderRow(row)) {
+                        continue;
+                    }
+                }
+                
+                // Skip empty rows
+                if (isExcelEmptyRow(row)) {
+                    continue;
+                }
+                
+                if (row.getLastCellNum() < 5) {
+                    continue; // Skip rows with insufficient data
+                }
+                
+                UserBatchData userData = new UserBatchData();
+                userData.username = getCellValueAsString(row.getCell(0));
+                userData.password = getCellValueAsString(row.getCell(1));
+                userData.email = getCellValueAsString(row.getCell(2));
+                userData.firstName = getCellValueAsString(row.getCell(3));
+                userData.lastName = getCellValueAsString(row.getCell(4));
+                
+                userDataList.add(userData);
+            }
+        }
+        
+        return userDataList;
+    }
+    
+    private String validateUserData(UserBatchData userData, int rowNumber) {
+        if (userData.username == null || userData.username.trim().isEmpty()) {
+            return "Row " + rowNumber + ": Username is required";
+        }
+        if (userData.password == null || userData.password.trim().isEmpty()) {
+            return "Row " + rowNumber + ": Password is required";
+        }
+        if (userData.email == null || userData.email.trim().isEmpty()) {
+            return "Row " + rowNumber + ": Email is required";
+        }
+        if (userData.firstName == null || userData.firstName.trim().isEmpty()) {
+            return "Row " + rowNumber + ": First name is required";
+        }
+        if (userData.lastName == null || userData.lastName.trim().isEmpty()) {
+            return "Row " + rowNumber + ": Last name is required";
+        }
+        
+        // Basic email validation
+        if (!userData.email.contains("@") || !userData.email.contains(".")) {
+            return "Row " + rowNumber + ": Invalid email format - " + userData.email;
+        }
+        
+        // Username validation
+        if (userData.username.length() < 3) {
+            return "Row " + rowNumber + ": Username must be at least 3 characters long";
+        }
+        
+        // Password validation
+        if (userData.password.length() < 6) {
+            return "Row " + rowNumber + ": Password must be at least 6 characters long";
+        }
+        
+        return null; // No validation errors
+    }
+    
+    private Users createUserFromBatchData(UserBatchData userData) {
+        Users user = new Users();
+        user.setUsername(userData.username.trim());
+        user.setPassword(userData.password); // Don't encode here - saveUser method handles encoding
+        user.setEmail(userData.email.trim().toLowerCase());
+        user.setFirstName(userData.firstName.trim());
+        user.setLastName(userData.lastName.trim());
+        user.getRoles().add(Role.USER);
+        
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        user.setVerified(false);
+        
+        return user;
+    }
+    
+
+    
+    // Helper methods
+    private boolean isHeaderRow(String[] values) {
+        if (values.length == 0) return false;
+        String firstValue = values[0].toLowerCase().trim();
+        return firstValue.equals("username") || firstValue.equals("user") || firstValue.equals("name");
+    }
+    
+    private boolean isEmptyRow(String[] values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private boolean isExcelHeaderRow(Row row) {
+        if (row.getCell(0) == null) return false;
+        String firstValue = getCellValueAsString(row.getCell(0)).toLowerCase();
+        return firstValue.equals("username") || firstValue.equals("user") || firstValue.equals("name");
+    }
+    
+    private boolean isExcelEmptyRow(Row row) {
+        for (int i = 0; i < 5; i++) {
+            if (row.getCell(i) != null && !getCellValueAsString(row.getCell(i)).trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) return null;
+        
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return String.valueOf((long) cell.getNumericCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            default:
+                return "";
+        }
+    }
+    
+    private String trimToNull(String str) {
+        if (str == null) return null;
+        str = str.trim();
+        return str.isEmpty() ? null : str;
+    }
+    
+    // Inner classes for batch processing
+    public static class UserBatchData {
+        public String username;
+        public String password;
+        public String email;
+        public String firstName;
+        public String lastName;
+    }
+    
+    public static class BatchProcessResult {
+        private final List<Users> successfulUsers;
+        private final List<String> errors;
+        
+        public BatchProcessResult(List<Users> successfulUsers, List<String> errors) {
+            this.successfulUsers = successfulUsers;
+            this.errors = errors;
+        }
+        
+        public List<Users> getSuccessfulUsers() { return successfulUsers; }
+        public List<String> getErrors() { return errors; }
+        public int getSuccessCount() { return successfulUsers.size(); }
+        public int getErrorCount() { return errors.size(); }
+        public boolean hasErrors() { return !errors.isEmpty(); }
     }
 
     public List<String> readUsernamesFromCSV(MultipartFile file) throws IOException {
