@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -65,6 +66,64 @@ public class Users {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institute_id")
     private Institute institute;
+
+    // Batch relationship - for students
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "batch_id")
+    private Batch batch;
+
+    // Parent relationship - for students in educational institutions
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private ParentProfile parentProfile;
+
+    // Manager relationship - for employees in industry L&D
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id")
+    private Users manager;
+
+    // Institutional specific attributes
+    @Column(name = "roll_number")
+    private String rollNumber;        // For students
+
+    @Column(name = "admission_id")
+    private String admissionId;       // For students
+
+    @Column(name = "staff_id")
+    private String staffId;           // For staff/instructors
+
+    @Column(name = "employee_id")
+    private String employeeId;        // For industry L&D
+
+    private String department;        // For industry L&D
+    private String jobRole;           // For industry L&D
+
+    // Contact details
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "parent_contact")
+    private String parentContact;     // For educational institutions
+
+    @Column(name = "emergency_contact")
+    private String emergencyContact;
+
+    // Academic/Professional details
+    @Column(name = "batch_name")
+    private String batchName;         // For students (batch name as string)
+    private String semester;          // For students
+    private String grade;             // For students
+    private String division;          // For students
+
+    @Column(name = "course_of_study")
+    private String courseOfStudy;     // For students
+
+    // Enrollment details
+    @Column(name = "enrollment_date")
+    private LocalDateTime enrollmentDate;
+
+    @Column(name = "last_login_date")
+    private LocalDateTime lastLoginDate;
 
     @PrePersist
     public void prePersist() {
