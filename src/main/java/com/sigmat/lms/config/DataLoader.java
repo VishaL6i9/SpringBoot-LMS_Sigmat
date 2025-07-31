@@ -32,7 +32,11 @@ public class DataLoader {
             InstituteRepository instituteRepository,
             InstituteService instituteService,
             InstituteSubscriptionRepository instituteSubscriptionRepository,
-            CourseAccessControlService courseAccessControlService) {
+            CourseAccessControlService courseAccessControlService,
+            BatchRepository batchRepository,
+            BatchService batchService,
+            ParentProfileRepository parentProfileRepository,
+            AnnouncementRepository announcementRepository) {
        
         return args -> {
             // Create SuperAdmin User
@@ -258,29 +262,65 @@ public class DataLoader {
                 businessCollege = existingBusinessCollege.get();
             }
 
-            // Assign users to institutes
+            // Assign users to institutes and add institutional attributes
             if (instituteAdminUser != null && instituteAdminUser.getInstitute() == null) {
                 instituteAdminUser.setInstitute(techUniversity);
+                instituteAdminUser.setStaffId("STAFF001");
+                instituteAdminUser.setDepartment("Administration");
+                instituteAdminUser.setJobRole("Institute Administrator");
+                instituteAdminUser.setPhoneNumber("+1-555-0101");
+                instituteAdminUser.setEnrollmentDate(LocalDateTime.now());
                 userRepo.save(instituteAdminUser);
                 System.out.println("Assigned institute admin to Tech University");
             }
 
             if (student1 != null && student1.getInstitute() == null) {
                 student1.setInstitute(techUniversity);
+                student1.setRollNumber("CS2024001");
+                student1.setAdmissionId("ADM2024001");
+                student1.setSemester("Fall 2024");
+                student1.setGrade("Freshman");
+                student1.setDivision("A");
+                student1.setCourseOfStudy("Computer Science");
+                student1.setBatchName("CS 2024 Batch A");
+                student1.setPhoneNumber("+1-555-0201");
+                student1.setParentContact("+1-555-0301");
+                student1.setEmergencyContact("+1-555-0401");
+                student1.setEnrollmentDate(LocalDateTime.of(2024, 8, 15, 9, 0));
                 userRepo.save(student1);
-                System.out.println("Assigned student1 to Tech University");
+                System.out.println("Assigned student1 to Tech University with institutional attributes");
             }
 
             if (student2 != null && student2.getInstitute() == null) {
                 student2.setInstitute(businessCollege);
+                student2.setRollNumber("BIZ2024001");
+                student2.setAdmissionId("ADM2024002");
+                student2.setSemester("Fall 2024");
+                student2.setGrade("Sophomore");
+                student2.setDivision("B");
+                student2.setCourseOfStudy("Business Administration");
+                student2.setBatchName("BIZ 2024 Batch B");
+                student2.setPhoneNumber("+1-555-0202");
+                student2.setParentContact("+1-555-0302");
+                student2.setEmergencyContact("+1-555-0402");
+                student2.setEnrollmentDate(LocalDateTime.of(2024, 8, 20, 9, 0));
                 userRepo.save(student2);
-                System.out.println("Assigned student2 to Business College");
+                System.out.println("Assigned student2 to Business College with institutional attributes");
             }
 
             if (instructorUser != null && instructor != null && instructor.getInstitute() == null) {
                 instructor.setInstitute(techUniversity);
                 instructorRepo.save(instructor);
-                System.out.println("Assigned instructor to Tech University");
+                
+                // Update instructor user with institutional attributes
+                instructorUser.setInstitute(techUniversity);
+                instructorUser.setStaffId("INST001");
+                instructorUser.setDepartment("Computer Science");
+                instructorUser.setJobRole("Senior Instructor");
+                instructorUser.setPhoneNumber("+1-555-0123");
+                instructorUser.setEnrollmentDate(LocalDateTime.now().minusYears(2));
+                userRepo.save(instructorUser);
+                System.out.println("Assigned instructor to Tech University with institutional attributes");
             }
             
             // Create Institute-specific Course
@@ -364,6 +404,17 @@ public class DataLoader {
                     }
                 }
             }
+
+            // Create Batches for Institutional Features
+            createBatches(batchRepository, techUniversity, businessCollege, instructor, instituteCourse, globalCourse, student1, student2, userRepo);
+
+            // Create Parent Profiles for Educational Institutions
+            createParentProfiles(parentProfileRepository, techUniversity, businessCollege, student1, student2);
+
+            // Create Sample Announcements
+            createAnnouncements(announcementRepository, techUniversity, businessCollege, instituteAdminUser, instructorUser);
+
+            System.out.println("###############DATALOADER SUCCESS WITH INSTITUTIONAL FEATURES!#####################");
         };
     }
 
@@ -603,5 +654,206 @@ public class DataLoader {
         course.setModules(modules);
         
         System.out.println("Created module and lessons for course: " + course.getCourseName());
+    }
+
+    private void createBatches(BatchRepository batchRepository, Institute techUniversity, Institute businessCollege, 
+                              Instructor instructor, Course instituteCourse, Course globalCourse, 
+                              Users student1, Users student2, UserRepo userRepo) {
+        try {
+            // Create Computer Science Batch for Tech University
+            Optional<Batch> existingCSBatch = batchRepository.findByBatchCode("CS2024A");
+            if (existingCSBatch.isEmpty()) {
+                Batch csBatch = Batch.builder()
+                        .batchName("Computer Science 2024 - Section A")
+                        .batchCode("CS2024A")
+                        .description("First year computer science students - Fall 2024 intake")
+                        .institute(techUniversity)
+                        .instructor(instructor)
+                        .course(instituteCourse)
+                        .startDate(LocalDateTime.of(2024, 9, 1, 9, 0))
+                        .endDate(LocalDateTime.of(2024, 12, 15, 17, 0))
+                        .maxStudents(30)
+                        .semester("Fall 2024")
+                        .academicYear("2024-2025")
+                        .grade("Freshman")
+                        .division("A")
+                        .status(Batch.BatchStatus.ACTIVE)
+                        .isActive(true)
+                        .build();
+                csBatch = batchRepository.save(csBatch);
+                
+                // Assign student1 to this batch
+                if (student1 != null) {
+                    student1.setBatch(csBatch);
+                    userRepo.save(student1);
+                }
+                
+                System.out.println("Created CS batch: " + csBatch.getBatchName());
+            }
+
+            // Create Business Batch for Business College
+            Optional<Batch> existingBizBatch = batchRepository.findByBatchCode("BIZ2024B");
+            if (existingBizBatch.isEmpty()) {
+                Batch bizBatch = Batch.builder()
+                        .batchName("Business Administration 2024 - Section B")
+                        .batchCode("BIZ2024B")
+                        .description("Second year business administration students - Fall 2024")
+                        .institute(businessCollege)
+                        .course(globalCourse)
+                        .startDate(LocalDateTime.of(2024, 9, 5, 9, 0))
+                        .endDate(LocalDateTime.of(2024, 12, 20, 17, 0))
+                        .maxStudents(25)
+                        .semester("Fall 2024")
+                        .academicYear("2024-2025")
+                        .grade("Sophomore")
+                        .division("B")
+                        .status(Batch.BatchStatus.ACTIVE)
+                        .isActive(true)
+                        .build();
+                bizBatch = batchRepository.save(bizBatch);
+                
+                // Assign student2 to this batch
+                if (student2 != null) {
+                    student2.setBatch(bizBatch);
+                    userRepo.save(student2);
+                }
+                
+                System.out.println("Created Business batch: " + bizBatch.getBatchName());
+            }
+        } catch (Exception e) {
+            System.out.println("Note: Could not create batches - " + e.getMessage());
+        }
+    }
+
+    private void createParentProfiles(ParentProfileRepository parentProfileRepository, Institute techUniversity, 
+                                    Institute businessCollege, Users student1, Users student2) {
+        try {
+            // Create parent profile for student1
+            if (student1 != null && !parentProfileRepository.existsByParentEmail("alice.parent@example.com")) {
+                ParentProfile parent1 = ParentProfile.builder()
+                        .parentName("John Johnson")
+                        .parentEmail("alice.parent@example.com")
+                        .phoneNumber("+1-555-0301")
+                        .relationship("Father")
+                        .institute(techUniversity)
+                        .canViewReports(true)
+                        .canViewAttendance(true)
+                        .canViewGrades(true)
+                        .canViewAnnouncements(true)
+                        .canReceiveNotifications(true)
+                        .emailNotifications(true)
+                        .smsNotifications(false)
+                        .preferredLanguage("en")
+                        .isActive(true)
+                        .build();
+                parent1 = parentProfileRepository.save(parent1);
+                
+                // Link student to parent
+                student1.setParentProfile(parent1);
+                
+                System.out.println("Created parent profile for student1: " + parent1.getParentName());
+            }
+
+            // Create parent profile for student2
+            if (student2 != null && !parentProfileRepository.existsByParentEmail("bob.parent@example.com")) {
+                ParentProfile parent2 = ParentProfile.builder()
+                        .parentName("Mary Smith")
+                        .parentEmail("bob.parent@example.com")
+                        .phoneNumber("+1-555-0302")
+                        .relationship("Mother")
+                        .institute(businessCollege)
+                        .canViewReports(true)
+                        .canViewAttendance(true)
+                        .canViewGrades(true)
+                        .canViewAnnouncements(true)
+                        .canReceiveNotifications(true)
+                        .emailNotifications(true)
+                        .smsNotifications(true)
+                        .preferredLanguage("en")
+                        .isActive(true)
+                        .build();
+                parent2 = parentProfileRepository.save(parent2);
+                
+                // Link student to parent
+                student2.setParentProfile(parent2);
+                
+                System.out.println("Created parent profile for student2: " + parent2.getParentName());
+            }
+        } catch (Exception e) {
+            System.out.println("Note: Could not create parent profiles - " + e.getMessage());
+        }
+    }
+
+    private void createAnnouncements(AnnouncementRepository announcementRepository, Institute techUniversity, 
+                                   Institute businessCollege, Users instituteAdminUser, Users instructorUser) {
+        try {
+            // Create welcome announcement for Tech University
+            if (techUniversity != null && instituteAdminUser != null) {
+                Announcement welcomeAnnouncement = Announcement.builder()
+                        .title("Welcome to Fall 2024 Semester!")
+                        .content("Welcome to the Fall 2024 semester at Tech University! We're excited to have you join us for another year of learning and growth. Please check your course schedules and prepare for an amazing semester ahead.")
+                        .type(Announcement.AnnouncementType.GENERAL)
+                        .priority(Announcement.AnnouncementPriority.HIGH)
+                        .author(instituteAdminUser)
+                        .institute(techUniversity)
+                        .targetRoles(Set.of(Role.USER, Role.INSTRUCTOR))
+                        .publishDate(LocalDateTime.now().minusDays(1))
+                        .expiryDate(LocalDateTime.now().plusDays(30))
+                        .isPublished(true)
+                        .isPinned(true)
+                        .sendNotification(true)
+                        .sendEmail(true)
+                        .isActive(true)
+                        .build();
+                announcementRepository.save(welcomeAnnouncement);
+                System.out.println("Created welcome announcement for Tech University");
+            }
+
+            // Create exam announcement for instructors
+            if (techUniversity != null && instructorUser != null) {
+                Announcement examAnnouncement = Announcement.builder()
+                        .title("Mid-term Examination Schedule")
+                        .content("Mid-term examinations will be conducted from October 15-20, 2024. Please check your individual course schedules for specific dates and times. Good luck with your preparations!")
+                        .type(Announcement.AnnouncementType.EXAM)
+                        .priority(Announcement.AnnouncementPriority.URGENT)
+                        .author(instructorUser)
+                        .institute(techUniversity)
+                        .targetRoles(Set.of(Role.USER))
+                        .publishDate(LocalDateTime.now())
+                        .expiryDate(LocalDateTime.of(2024, 10, 21, 23, 59))
+                        .isPublished(true)
+                        .isPinned(false)
+                        .sendNotification(true)
+                        .sendEmail(true)
+                        .isActive(true)
+                        .build();
+                announcementRepository.save(examAnnouncement);
+                System.out.println("Created exam announcement for Tech University");
+            }
+
+            // Create holiday announcement for Business College
+            if (businessCollege != null && instituteAdminUser != null) {
+                Announcement holidayAnnouncement = Announcement.builder()
+                        .title("Thanksgiving Break Notice")
+                        .content("The college will be closed for Thanksgiving break from November 25-29, 2024. Classes will resume on Monday, December 2nd. Have a wonderful holiday with your families!")
+                        .type(Announcement.AnnouncementType.HOLIDAY)
+                        .priority(Announcement.AnnouncementPriority.MEDIUM)
+                        .author(instituteAdminUser)
+                        .institute(businessCollege)
+                        .targetRoles(Set.of(Role.USER, Role.INSTRUCTOR))
+                        .publishDate(LocalDateTime.now())
+                        .expiryDate(LocalDateTime.of(2024, 12, 2, 23, 59))
+                        .isPublished(true)
+                        .isPinned(false)
+                        .sendNotification(true)
+                        .sendEmail(false)
+                        .isActive(true)
+                        .build();
+                announcementRepository.save(holidayAnnouncement);
+                System.out.println("Created holiday announcement for Business College");
+            }
+        } catch (Exception e) {
+            System.out.println("Note: Could not create announcements - " + e.getMessage());
+        }
     }
 }
