@@ -1,6 +1,7 @@
 package com.sigmat.lms.controllers;
 
 import com.sigmat.lms.dtos.EnrollmentDTO;
+import com.sigmat.lms.dtos.ProfileImageUploadResponseDTO;
 import com.sigmat.lms.dtos.UserProfileDTO;
 import com.sigmat.lms.dtos.UserSubscriptionDTO;
 import com.sigmat.lms.models.*;
@@ -113,20 +114,27 @@ public class UserProfileController {
     
     //Save ProfileImage With UserID
     @PostMapping("/profile/pic/upload/{userId}")
-    public ResponseEntity<UserProfile> uploadProfileImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> uploadProfileImage(@PathVariable Long userId, @RequestParam("file") MultipartFile file, @RequestHeader("Authorization") String token) {
         if (!isAuthorized(token, userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         try {
-            UserProfile updatedProfile = userProfileService.saveProfileImage(userId, file);
-
-            if (updatedProfile != null) {
-                return ResponseEntity.ok(updatedProfile);
-            } else {
-                return ResponseEntity.notFound().build(); 
-            }
+            ProfileImageUploadResponseDTO response = userProfileService.saveProfileImageOptimized(userId, file);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(
+                ProfileImageUploadResponseDTO.builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .build()
+            );
         } catch (IOException e) {
-            return ResponseEntity.status(500).build(); 
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ProfileImageUploadResponseDTO.builder()
+                    .success(false)
+                    .message("Failed to upload image: " + e.getMessage())
+                    .build()
+            );
         }
     }
     
