@@ -1,5 +1,6 @@
 package com.sigmat.lms.services;
 
+import com.sigmat.lms.dtos.ProfileImageUploadResponseDTO;
 import com.sigmat.lms.dtos.UserDTO;
 import com.sigmat.lms.dtos.UserProfileDTO;
 import com.sigmat.lms.exceptions.UserProfileNotFoundException;
@@ -142,6 +143,62 @@ public class UserProfileService {
         userProfile.setProfileImage(profileImage);
     
         return userProfileRepository.save(userProfile);
+    }
+
+    @Transactional
+    public ProfileImageUploadResponseDTO saveProfileImageOptimized(Long userId, MultipartFile file) throws IOException {
+        // Validate file
+        if (file.isEmpty()) {
+            throw new RuntimeException("File is empty");
+        }
+
+        // Check file size (5MB limit)
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new RuntimeException("File size exceeds 5MB limit");
+        }
+    
+        String contentType = file.getContentType();
+        if (!isValidImageType(contentType)) {
+            throw new RuntimeException("Invalid file type. Only JPEG, PNG, and GIF are allowed");
+        }
+
+        // Validate filename
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.trim().isEmpty()) {
+            originalFilename = "profile_image_" + System.currentTimeMillis();
+        }
+    
+        UserProfile userProfile = userProfileRepository.findByUsersId(userId);
+        if (userProfile == null) {
+            throw new UserProfileNotFoundException("User Profile not found with id: " + userId);
+        }
+        
+        // Delete old profile image if exists
+        if (userProfile.getProfileImage() != null) {
+            ProfileImage oldImage = userProfile.getProfileImage();
+            userProfile.setProfileImage(null);
+            userProfileRepository.save(userProfile);
+            profileImageRepo.delete(oldImage);
+        }
+        
+        // Save new profile image
+        ProfileImage profileImage = new ProfileImage();
+        profileImage.setImageData(file.getBytes());
+        profileImage.setImageName(originalFilename);
+        profileImage.setContentType(contentType);
+        profileImage = profileImageRepo.save(profileImage);
+        
+        // Update user profile
+        userProfile.setProfileImage(profileImage);
+        userProfileRepository.save(userProfile);
+
+        return ProfileImageUploadResponseDTO.builder()
+                .profileImageId(profileImage.getId())
+                .imageName(profileImage.getImageName())
+                .contentType(profileImage.getContentType())
+                .message("Profile image uploaded successfully")
+                .success(true)
+                .build();
     }
 
     private boolean isValidImageType(String contentType) {
