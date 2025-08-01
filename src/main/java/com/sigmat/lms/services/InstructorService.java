@@ -1,5 +1,6 @@
 package com.sigmat.lms.services;
 
+import com.sigmat.lms.dtos.InstructorDTO;
 import com.sigmat.lms.models.Instructor;
 import com.sigmat.lms.models.Users;
 import com.sigmat.lms.repository.InstructorRepo;
@@ -21,6 +22,56 @@ public class InstructorService {
 
     public List<Instructor> getAllInstructors() {
         return instructorRepo.findAll();
+    }
+
+    public List<InstructorDTO> getAllInstructorsDTO() {
+        List<Instructor> instructors = instructorRepo.findAll();
+        return instructors.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    public InstructorDTO getInstructorDTOById(Long instructorId) {
+        Optional<Instructor> instructor = instructorRepo.findByInstructorId(instructorId);
+        return instructor.map(this::convertToDTO).orElse(null);
+    }
+
+    private InstructorDTO convertToDTO(Instructor instructor) {
+        InstructorDTO.InstructorDTOBuilder builder = InstructorDTO.builder()
+                .instructorId(instructor.getInstructorId())
+                .firstName(instructor.getFirstName())
+                .lastName(instructor.getLastName())
+                .email(instructor.getEmail())
+                .phoneNo(instructor.getPhoneNo())
+                .dateOfJoining(instructor.getDateOfJoining())
+                .facebookHandle(instructor.getFacebookHandle())
+                .linkedinHandle(instructor.getLinkedinHandle())
+                .youtubeHandle(instructor.getYoutubeHandle());
+
+        // Safely handle lazy-loaded User relationship
+        if (instructor.getUser() != null) {
+            try {
+                builder.userId(instructor.getUser().getId())
+                       .username(instructor.getUser().getUsername())
+                       .userEmail(instructor.getUser().getEmail());
+            } catch (Exception e) {
+                // Handle case where user proxy can't be loaded
+                LOGGER.warning("Could not load user data for instructor " + instructor.getInstructorId());
+            }
+        }
+
+        // Safely handle lazy-loaded Institute relationship
+        if (instructor.getInstitute() != null) {
+            try {
+                builder.instituteId(instructor.getInstitute().getInstituteId())
+                       .instituteName(instructor.getInstitute().getInstituteName());
+            } catch (Exception e) {
+                // Handle case where institute proxy can't be loaded
+                LOGGER.warning("Could not load institute data for instructor " + instructor.getInstructorId());
+            }
+        }
+
+        return builder.build();
     }
 
     public Instructor saveInstructor(Instructor instructor) {

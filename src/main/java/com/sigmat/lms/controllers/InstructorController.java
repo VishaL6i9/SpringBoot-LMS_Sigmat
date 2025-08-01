@@ -1,5 +1,6 @@
 package com.sigmat.lms.controllers;
 
+import com.sigmat.lms.dtos.InstructorDTO;
 import com.sigmat.lms.models.Instructor;
 import com.sigmat.lms.services.InstructorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,17 +36,28 @@ public class InstructorController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'INSTRUCTOR', 'USER')")
-    public ResponseEntity<List<Instructor>> getAllInstructors() {
-        List<Instructor> instructors = instructorService.getAllInstructors();
-        return new ResponseEntity<>(instructors, HttpStatus.OK);
+    public ResponseEntity<List<InstructorDTO>> getAllInstructors() {
+        try {
+            List<InstructorDTO> instructors = instructorService.getAllInstructorsDTO();
+            return new ResponseEntity<>(instructors, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/{instructorId}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'INSTRUCTOR', 'USER')")
-    public ResponseEntity<Instructor> getInstructorById(@PathVariable Long instructorId) {
-        Optional<Instructor> instructor = instructorService.getInstructorById(instructorId);
-        return instructor.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    public ResponseEntity<InstructorDTO> getInstructorById(@PathVariable Long instructorId) {
+        try {
+            InstructorDTO instructor = instructorService.getInstructorDTOById(instructorId);
+            if (instructor != null) {
+                return ResponseEntity.ok(instructor);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PutMapping("/{instructorId}")
