@@ -1,6 +1,5 @@
 package com.sigmat.lms.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,10 +30,12 @@ public class Announcement {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
+    @Builder.Default
     private AnnouncementType type = AnnouncementType.GENERAL;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "priority")
+    @Builder.Default
     private AnnouncementPriority priority = AnnouncementPriority.MEDIUM;
 
     // Author information

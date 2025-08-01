@@ -70,6 +70,7 @@ public class Batch {
     // Batch status
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
+    @Builder.Default
     private BatchStatus status = BatchStatus.PLANNED;
 
     @Builder.Default
