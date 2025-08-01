@@ -8,6 +8,7 @@ import com.sigmat.lms.models.SubscriptionPlanType;
 import com.sigmat.lms.services.StripeService;
 import com.sigmat.lms.services.SubscriptionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/subscriptions")
 @RequiredArgsConstructor
+@Slf4j
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
@@ -138,11 +140,27 @@ public class SubscriptionController {
 
     @PostMapping("/checkout/success")
     public ResponseEntity<?> handleCheckoutSuccess(
-            @RequestParam String sessionId, 
+            @RequestParam(value = "sessionId", required = false) String sessionId,
+            @RequestParam(value = "session_id", required = false) String sessionIdAlt,
             @RequestParam Long userId) {
         try {
+            // Handle both sessionId and session_id parameters (Stripe can send either)
+            String actualSessionId = sessionId != null ? sessionId : sessionIdAlt;
+            
+            if (actualSessionId == null) {
+                return ResponseEntity.badRequest().body("Missing session ID parameter");
+            }
+            
+            // Clean the session ID - remove any duplicated parts
+            actualSessionId = cleanSessionId(actualSessionId);
+            
+            // Validate session ID format and length
+            if (!isValidSessionId(actualSessionId)) {
+                return ResponseEntity.badRequest().body("Invalid session ID format");
+            }
+
             // Retrieve session from Stripe to get metadata
-            var session = stripeService.getCheckoutSession(sessionId);
+            var session = stripeService.getCheckoutSession(actualSessionId);
             
             if (!"complete".equals(session.getPaymentStatus())) {
                 return ResponseEntity.badRequest().body("Payment not completed");
@@ -154,18 +172,81 @@ public class SubscriptionController {
 
             // Process the checkout success
             UserSubscriptionDTO subscription = subscriptionService.processCheckoutSuccess(
-                sessionId, userId, planId, durationMonths);
+                actualSessionId, userId, planId, durationMonths);
 
             Map<String, Object> response = new HashMap<>();
             response.put("subscription", subscription);
-            response.put("sessionId", sessionId);
+            response.put("sessionId", actualSessionId);
             response.put("message", "Subscription created successfully");
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error processing checkout success: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("Error processing subscription: " + e.getMessage());
+        }
+    }
+    
+    private String cleanSessionId(String sessionId) {
+        if (sessionId == null) return null;
+        
+        // Remove any query parameters that might have been appended
+        if (sessionId.contains("?")) {
+            sessionId = sessionId.substring(0, sessionId.indexOf("?"));
+        }
+        
+        // If the session ID appears to be duplicated, take only the first part
+        if (sessionId.length() > 66 && sessionId.startsWith("cs_test_")) {
+            // Find the second occurrence of "cs_test_" and split there
+            int secondOccurrence = sessionId.indexOf("cs_test_", 8);
+            if (secondOccurrence > 0) {
+                sessionId = sessionId.substring(0, secondOccurrence);
+            }
+        }
+        
+        return sessionId.trim();
+    }
+    
+    private boolean isValidSessionId(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return false;
+        }
+        
+        // Stripe session IDs should start with cs_ and be at most 66 characters
+        return sessionId.startsWith("cs_") && sessionId.length() <= 66;
+    }
+    
+    @GetMapping("/debug/session/{sessionId}")
+    public ResponseEntity<?> debugSession(@PathVariable String sessionId) {
+        try {
+            String cleanedSessionId = cleanSessionId(sessionId);
+            boolean isValid = isValidSessionId(cleanedSessionId);
+            
+            Map<String, Object> debug = new HashMap<>();
+            debug.put("originalSessionId", sessionId);
+            debug.put("cleanedSessionId", cleanedSessionId);
+            debug.put("originalLength", sessionId.length());
+            debug.put("cleanedLength", cleanedSessionId.length());
+            debug.put("isValid", isValid);
+            debug.put("startsWithCs", sessionId.startsWith("cs_"));
+            
+            if (isValid) {
+                try {
+                    var session = stripeService.getCheckoutSession(cleanedSessionId);
+                    debug.put("stripeSessionExists", true);
+                    debug.put("paymentStatus", session.getPaymentStatus());
+                    debug.put("metadata", session.getMetadata());
+                } catch (Exception e) {
+                    debug.put("stripeSessionExists", false);
+                    debug.put("stripeError", e.getMessage());
+                }
+            }
+            
+            return ResponseEntity.ok(debug);
+            
+        } catch (Exception e) {
+            log.error("Error debugging session: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Debug error: " + e.getMessage());
         }
     }
 
