@@ -9,6 +9,7 @@ import com.sigmat.lms.repository.SubscriptionPlanRepository;
 import com.sigmat.lms.repository.UserRepo;
 import com.sigmat.lms.repository.UserSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SubscriptionService {
 
     private final SubscriptionPlanRepository subscriptionPlanRepository;
@@ -162,6 +164,24 @@ public class SubscriptionService {
 
         // Create the subscription
         return subscribeUser(userId, subscriptionRequest);
+    }
+
+    @Transactional
+    public void activateSubscriptionByStripeId(String stripeSubscriptionId) {
+        // Find subscription by payment reference containing the stripe ID
+        var subscriptions = userSubscriptionRepository.findAll().stream()
+            .filter(sub -> sub.getPaymentReference() != null && 
+                          sub.getPaymentReference().contains(stripeSubscriptionId))
+            .toList();
+
+        for (UserSubscription subscription : subscriptions) {
+            if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
+                subscription.setStatus(SubscriptionStatus.ACTIVE);
+                subscription.setUpdatedAt(LocalDateTime.now());
+                userSubscriptionRepository.save(subscription);
+                log.info("Activated subscription {} for user {}", subscription.getId(), subscription.getUser().getId());
+            }
+        }
     }
 
     private UserSubscriptionDTO convertToDTO(UserSubscription subscription) {

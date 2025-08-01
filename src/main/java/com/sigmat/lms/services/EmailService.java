@@ -94,6 +94,28 @@ public class EmailService {
         }
     }
 
+    public void sendPaymentSuccessEmail(String to, String customerName, double amount, String currency, String invoiceId) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setTo(to);
+            helper.setSubject("Payment Successful - " + appName);
+            helper.setFrom(supportEmail);
+            
+            String htmlContent = createPaymentSuccessEmailTemplate(customerName, amount, currency, invoiceId);
+            
+            helper.setText(htmlContent, true);
+            
+            mailSender.send(message);
+            LOGGER.info("Payment success email sent successfully to: " + to);
+            
+        } catch (MessagingException e) {
+            LOGGER.severe("Failed to send payment success email to " + to + ": " + e.getMessage());
+            throw new RuntimeException("Failed to send payment success email", e);
+        }
+    }
+
     private String createVerificationEmailTemplate(String email, String verificationUrl) {
         return "<!DOCTYPE html>" +
             "<html lang=\"en\">" +
@@ -267,6 +289,60 @@ public class EmailService {
                     "<div class=\"footer\">" +
                         "<p><strong>" + appName + "</strong></p>" +
                         "<p>This is an automated summary report.</p>" +
+                    "</div>" +
+                "</div>" +
+            "</body>" +
+            "</html>";
+    }
+
+    private String createPaymentSuccessEmailTemplate(String customerName, double amount, String currency, String invoiceId) {
+        return "<!DOCTYPE html>" +
+            "<html lang=\"en\">" +
+            "<head>" +
+                "<meta charset=\"UTF-8\">" +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                "<title>Payment Successful</title>" +
+                "<style>" +
+                    "body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4; }" +
+                    ".email-container { background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden; }" +
+                    ".header { background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; padding: 30px; text-align: center; }" +
+                    ".header h1 { margin: 0; font-size: 28px; font-weight: 300; }" +
+                    ".content { padding: 40px 30px; }" +
+                    ".success-icon { font-size: 48px; color: #27ae60; text-align: center; margin: 20px 0; }" +
+                    ".payment-details { background-color: #f8f9fa; border-left: 4px solid #27ae60; padding: 20px; margin: 20px 0; border-radius: 0 5px 5px 0; }" +
+                    ".amount { font-size: 24px; font-weight: bold; color: #27ae60; text-align: center; margin: 20px 0; }" +
+                    ".footer { background-color: #2c3e50; color: #ecf0f1; padding: 20px 30px; text-align: center; font-size: 14px; }" +
+                    ".footer a { color: #3498db; text-decoration: none; }" +
+                "</style>" +
+            "</head>" +
+            "<body>" +
+                "<div class=\"email-container\">" +
+                    "<div class=\"header\">" +
+                        "<h1>Payment Successful!</h1>" +
+                        "<p>" + appName + "</p>" +
+                    "</div>" +
+                    "<div class=\"content\">" +
+                        "<div class=\"success-icon\">✅</div>" +
+                        "<p><strong>Hello " + customerName + ",</strong></p>" +
+                        "<p>Great news! Your payment has been successfully processed.</p>" +
+                        "<div class=\"amount\">" + currency + " " + String.format("%.2f", amount) + "</div>" +
+                        "<div class=\"payment-details\">" +
+                            "<strong>Payment Details:</strong>" +
+                            "<ul style=\"margin: 10px 0; padding-left: 20px;\">" +
+                                "<li>Amount: " + currency + " " + String.format("%.2f", amount) + "</li>" +
+                                "<li>Invoice ID: " + invoiceId + "</li>" +
+                                "<li>Date: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' HH:mm")) + "</li>" +
+                                "<li>Status: Paid</li>" +
+                            "</ul>" +
+                        "</div>" +
+                        "<p>Your subscription is now active and you have full access to all premium features.</p>" +
+                        "<p>If you have any questions about your payment or subscription, please don't hesitate to contact our support team.</p>" +
+                        "<p>Thank you for choosing " + appName + "!</p>" +
+                    "</div>" +
+                    "<div class=\"footer\">" +
+                        "<p><strong>" + appName + "</strong></p>" +
+                        "<p>Need help? Contact us at <a href=\"mailto:" + supportEmail + "\">" + supportEmail + "</a></p>" +
+                        "<p style=\"margin-top: 15px; font-size: 12px;\">This is an automated message. Please do not reply to this email.</p>" +
                     "</div>" +
                 "</div>" +
             "</body>" +

@@ -24,6 +24,8 @@ public class StripeWebhookService {
     private final SubscriptionService subscriptionService;
     private final NotificationService notificationService;
     private final CoursePurchaseService coursePurchaseService;
+    private final EmailService emailService;
+    private final UserService userService;
 
     @Transactional
     public void handleCheckoutSessionCompleted(Event event) {
@@ -49,10 +51,21 @@ public class StripeWebhookService {
 
             if ("course".equals(purchaseType)) {
                 // Handle course purchase
-                coursePurchaseService.completePurchase(session.getId(), "stripe_session_" + session.getId());
+                var coursePurchase = coursePurchaseService.completePurchase(session.getId(), "stripe_session_" + session.getId());
+                
+                // Send course purchase success notification
+                sendPurchaseSuccessNotification(userId, "course", Map.of(
+                    "sessionId", session.getId(),
+                    "amount", session.getAmountTotal() / 100.0, // Convert from cents
+                    "currency", session.getCurrency().toUpperCase(),
+                    "purchaseType", "Course Purchase",
+                    "date", LocalDateTime.now().toString()
+                ));
+                
                 log.info("Course purchase completed successfully for user: {}", userId);
+                
             } else {
-                // Handle subscription purchase (legacy)
+                // Handle subscription purchase
                 String planIdStr = metadata.get("plan_id");
                 String durationMonthsStr = metadata.get("duration_months");
 
@@ -64,12 +77,38 @@ public class StripeWebhookService {
                 Long planId = Long.valueOf(planIdStr);
                 Integer durationMonths = durationMonthsStr != null ? Integer.valueOf(durationMonthsStr) : null;
 
-                subscriptionService.processCheckoutSuccess(session.getId(), userId, planId, durationMonths);
+                var subscription = subscriptionService.processCheckoutSuccess(session.getId(), userId, planId, durationMonths);
+                
+                // Send subscription success notification
+                sendPurchaseSuccessNotification(userId, "subscription", Map.of(
+                    "sessionId", session.getId(),
+                    "amount", session.getAmountTotal() / 100.0, // Convert from cents
+                    "currency", session.getCurrency().toUpperCase(),
+                    "purchaseType", "Subscription",
+                    "planName", subscription.getSubscriptionPlan().getName(),
+                    "duration", durationMonths != null ? durationMonths + " months" : "1 month",
+                    "date", LocalDateTime.now().toString()
+                ));
+                
                 log.info("Subscription created successfully for user: {}", userId);
             }
 
         } catch (Exception e) {
             log.error("Failed to process checkout session: {}", e.getMessage(), e);
+            
+            // Send failure notification to user
+            try {
+                Long userId = Long.valueOf(userIdStr);
+                sendPurchaseFailureNotification(userId, Map.of(
+                    "sessionId", session.getId(),
+                    "error", e.getMessage(),
+                    "date", LocalDateTime.now().toString()
+                ));
+            } catch (Exception notificationError) {
+                log.error("Failed to send failure notification: {}", notificationError.getMessage());
+            }
+            
+            throw new RuntimeException("Checkout processing failed", e);
         }
     }
 
@@ -107,17 +146,31 @@ public class StripeWebhookService {
 
             Long userId = Long.valueOf(userIdStr);
 
+            // Update subscription status to active if it was suspended
+            try {
+                subscriptionService.activateSubscriptionByStripeId(subscriptionId);
+                log.info("Subscription activated for user: {}", userId);
+            } catch (Exception e) {
+                log.warn("Could not activate subscription: {}", e.getMessage());
+            }
+
             // Send success notification
             sendSubscriptionNotification(userId, "payment_success", Map.of(
                 "invoiceId", invoice.getId(),
                 "amount", invoice.getAmountPaid() / 100.0, // Convert from cents
-                "date", LocalDateTime.now().toString()
+                "currency", invoice.getCurrency().toUpperCase(),
+                "date", LocalDateTime.now().toString(),
+                "subscriptionId", subscriptionId
             ));
 
-            log.info("Payment success notification sent to user: {}", userId);
+            // Send email confirmation
+            sendPaymentSuccessEmail(userId, invoice);
+
+            log.info("Payment success processed for user: {}", userId);
 
         } catch (Exception e) {
             log.error("Failed to process invoice payment: {}", e.getMessage(), e);
+            throw new RuntimeException("Invoice payment processing failed", e);
         }
     }
 
@@ -338,5 +391,67 @@ public class StripeWebhookService {
                 "Your subscription has ended. To continue accessing premium features, please renew your subscription.";
             default -> "Your subscription status has been updated.";
         };
+    }
+
+    private void sendPurchaseSuccessNotification(Long userId, String purchaseType, Map<String, Object> data) {
+        try {
+            String title = "course".equals(purchaseType) ? "Course Purchase Successful!" : "Subscription Activated!";
+            String message = "course".equals(purchaseType) ? 
+                String.format("Your course purchase of %s %.2f was successful. You now have access to your course content!", 
+                    data.get("currency"), (Double) data.get("amount")) :
+                String.format("Your %s subscription of %s %.2f was successful. Your %s subscription is now active!", 
+                    data.get("planName"), data.get("currency"), (Double) data.get("amount"), data.get("duration"));
+
+            NotificationDTO notification = NotificationDTO.builder()
+                    .title(title)
+                    .message(message)
+                    .type(NotificationType.SUCCESS)
+                    .category(NotificationCategory.PAYMENT)
+                    .priority(NotificationPriority.HIGH)
+                    .build();
+
+            notificationService.createNotification(notification, userId);
+            log.info("Purchase success notification sent to user {}: {}", userId, purchaseType);
+
+        } catch (Exception e) {
+            log.error("Failed to send purchase success notification to user {}: {}", userId, e.getMessage(), e);
+        }
+    }
+
+    private void sendPurchaseFailureNotification(Long userId, Map<String, Object> data) {
+        try {
+            NotificationDTO notification = NotificationDTO.builder()
+                    .title("Purchase Failed")
+                    .message(String.format("Your purchase could not be completed. Error: %s. Please try again or contact support.", 
+                        data.get("error")))
+                    .type(NotificationType.ERROR)
+                    .category(NotificationCategory.PAYMENT)
+                    .priority(NotificationPriority.HIGH)
+                    .build();
+
+            notificationService.createNotification(notification, userId);
+            log.info("Purchase failure notification sent to user {}", userId);
+
+        } catch (Exception e) {
+            log.error("Failed to send purchase failure notification to user {}: {}", userId, e.getMessage(), e);
+        }
+    }
+
+    private void sendPaymentSuccessEmail(Long userId, Invoice invoice) {
+        try {
+            var user = userService.getUserById(userId);
+            if (user != null && user.getEmail() != null) {
+                emailService.sendPaymentSuccessEmail(
+                    user.getEmail(),
+                    user.getFirstName() + " " + user.getLastName(),
+                    invoice.getAmountPaid() / 100.0, // Convert from cents
+                    invoice.getCurrency().toUpperCase(),
+                    invoice.getId()
+                );
+                log.info("Payment success email sent to user: {}", userId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send payment success email to user {}: {}", userId, e.getMessage());
+        }
     }
 }
