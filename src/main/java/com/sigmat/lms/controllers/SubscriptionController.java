@@ -5,10 +5,14 @@ import com.sigmat.lms.dtos.SubscriptionPlanDTO;
 import com.sigmat.lms.dtos.SubscriptionRequestDTO;
 import com.sigmat.lms.dtos.UserSubscriptionDTO;
 import com.sigmat.lms.models.SubscriptionPlanType;
+import com.sigmat.lms.models.Users;
+import com.sigmat.lms.services.JwtService;
 import com.sigmat.lms.services.StripeService;
 import com.sigmat.lms.services.SubscriptionService;
+import com.sigmat.lms.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +29,8 @@ public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
     private final StripeService stripeService;
+    private final JwtService jwtService;
+    private final UserService userService;
 
     @GetMapping("/plans")
     public ResponseEntity<List<SubscriptionPlanDTO>> getAllPlans() {
@@ -76,6 +82,36 @@ public class SubscriptionController {
             return ResponseEntity.ok(subscription);
         }
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/user/current")
+    public ResponseEntity<UserSubscriptionDTO> getCurrentUserSubscription(@RequestHeader("Authorization") String token) {
+        try {
+            // Extract user ID from JWT token
+            String jwt = token.substring(7); // Remove "Bearer " prefix
+            String username = jwtService.extractUserName(jwt);
+            
+            if (username == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            // Find user by username
+            Users user = userService.findByUsername(username);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            
+            // Get current subscription
+            UserSubscriptionDTO subscription = subscriptionService.getCurrentSubscription(user.getId());
+            if (subscription != null) {
+                return ResponseEntity.ok(subscription);
+            }
+            return ResponseEntity.noContent().build();
+            
+        } catch (Exception e) {
+            log.error("Error getting current user subscription: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 
@@ -144,25 +180,27 @@ public class SubscriptionController {
             @RequestParam(value = "session_id", required = false) String sessionIdAlt,
             @RequestParam Long userId) {
         try {
+            log.info("handleCheckoutSuccess called with sessionId: {}, sessionIdAlt: {}, userId: {}", sessionId, sessionIdAlt, userId);
+
             // Handle both sessionId and session_id parameters (Stripe can send either)
             String actualSessionId = sessionId != null ? sessionId : sessionIdAlt;
             
             if (actualSessionId == null) {
+                log.warn("Missing session ID parameter in handleCheckoutSuccess");
                 return ResponseEntity.badRequest().body("Missing session ID parameter");
             }
             
+            log.info("Actual session ID before cleaning: {}", actualSessionId);
             // Clean the session ID - remove any duplicated parts
             actualSessionId = cleanSessionId(actualSessionId);
-            
-            // Validate session ID format and length
-            if (!isValidSessionId(actualSessionId)) {
-                return ResponseEntity.badRequest().body("Invalid session ID format");
-            }
+            log.info("Actual session ID after cleaning: {}", actualSessionId);
 
             // Retrieve session from Stripe to get metadata
             var session = stripeService.getCheckoutSession(actualSessionId);
+            log.info("Stripe session payment status in handleCheckoutSuccess: {}", session.getPaymentStatus());
             
-            if (!"complete".equals(session.getPaymentStatus())) {
+            if (!"paid".equals(session.getPaymentStatus())) {
+                log.warn("Payment not completed for session ID: {}", actualSessionId);
                 return ResponseEntity.badRequest().body("Payment not completed");
             }
 
@@ -207,30 +245,32 @@ public class SubscriptionController {
         return sessionId.trim();
     }
     
-    private boolean isValidSessionId(String sessionId) {
-        if (sessionId == null || sessionId.trim().isEmpty()) {
-            return false;
-        }
-        
-        // Stripe session IDs should start with cs_ and be at most 66 characters
-        return sessionId.startsWith("cs_") && sessionId.length() <= 66;
-    }
-    
     @GetMapping("/debug/session/{sessionId}")
     public ResponseEntity<?> debugSession(@PathVariable String sessionId) {
         try {
+            // Validate sessionId to prevent malicious input
+            if (sessionId == null || sessionId.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Session ID cannot be empty");
+            }
+            
+            // Check for suspicious characters that might indicate code injection
+            if (sessionId.contains("function") || sessionId.contains("{") || sessionId.contains("}") || 
+                sessionId.contains("(") || sessionId.contains(")") || sessionId.length() > 200) {
+                log.warn("Suspicious session ID detected: {}", sessionId.substring(0, Math.min(50, sessionId.length())));
+                return ResponseEntity.badRequest().body("Invalid session ID format");
+            }
+            
             String cleanedSessionId = cleanSessionId(sessionId);
-            boolean isValid = isValidSessionId(cleanedSessionId);
+            //boolean isValid = isValidSessionId(cleanedSessionId);
             
             Map<String, Object> debug = new HashMap<>();
             debug.put("originalSessionId", sessionId);
             debug.put("cleanedSessionId", cleanedSessionId);
             debug.put("originalLength", sessionId.length());
-            debug.put("cleanedLength", cleanedSessionId.length());
-            debug.put("isValid", isValid);
+            debug.put("cleanedLength", cleanedSessionId != null ? cleanedSessionId.length() : 0);
+         //   debug.put("isValid", isValid);
             debug.put("startsWithCs", sessionId.startsWith("cs_"));
             
-            if (isValid) {
                 try {
                     var session = stripeService.getCheckoutSession(cleanedSessionId);
                     debug.put("stripeSessionExists", true);
@@ -240,7 +280,6 @@ public class SubscriptionController {
                     debug.put("stripeSessionExists", false);
                     debug.put("stripeError", e.getMessage());
                 }
-            }
             
             return ResponseEntity.ok(debug);
             
