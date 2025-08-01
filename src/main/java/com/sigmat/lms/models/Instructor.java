@@ -1,5 +1,7 @@
 package com.sigmat.lms.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,11 +35,13 @@ public class Instructor {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Users user;
 
     // Institute relationship - instructors belong to an institute
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institute_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Institute institute;
     
     //@Column
